@@ -87,6 +87,10 @@
     .turma-item .meta{margin-left:0;width:100%}
   }
   @media (max-width:380px){.kpis{grid-template-columns:1fr}}
+  /* seletor de visão */
+  .modebtn{font-family:'IBM Plex Mono';font-size:12px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-soft);padding:7px 14px;border-radius:9px;cursor:pointer}
+  .modebtn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .forme-tag{display:inline-block;font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--humano);border:1px solid var(--humano);border-radius:6px;padding:1px 6px;margin-left:8px;vertical-align:middle}
   /* analítico — facilitação */
   .briefing{border-left:4px solid var(--ia)}
   .briefing p{font-size:14.5px;color:var(--ink-soft);margin:7px 0;line-height:1.55}
@@ -210,6 +214,12 @@
     </div>
     <p class="note" style="margin:6px 0 0">Os nomes ficam ocultos por padrão. Marque acima para exibi-los.</p>
   </div>
+  <div class="row" id="dashModeRow" style="display:none;margin:-4px 0 0;gap:8px">
+    <span class="note">Visão:</span>
+    <button class="modebtn active" data-mode="instrutor">Para mim</button>
+    <button class="modebtn" data-mode="turma">Para a turma</button>
+    <span class="note">projete “Para a turma” — a leitura crítica e a pauta de facilitação só aparecem em “Para mim”.</span>
+  </div>
   <div id="dashBody"></div>
 </section>
 
@@ -229,6 +239,7 @@ const STAGES=[{n:'Espectador',c:'var(--s1)'},{n:'Experimentador',c:'var(--s2)'},
 const ORG_DOMS=['Estratégia','Dados','Talento','Governança','Cultura'];
 const ORG_STAGES=['Fundacional','Emergente','Operacional','Sistêmico','Transformacional'];
 const MAT_DIMS=[{k:'ent',n:'Entender IA'},{k:'usar',n:'Usar & aplicar'},{k:'disc',n:'Discernir'},{k:'etic',n:'Ética & resp.'},{k:'dec',n:'Decisão aumentada'},{k:'orq',n:'Orquestração'}];
+const TERMS=[{t:'Alucinação',real:true},{t:'Prompt',real:true},{t:'Viés algorítmico',real:true},{t:'Janela de contexto',real:true},{t:'RAG (busca aumentada)',real:true},{t:'Ajuste fino (fine-tuning)',real:true},{t:'Destilação reversa de contexto',real:false},{t:'Ancoragem semântica adaptativa',real:false},{t:'Indexação cognitiva preditiva',real:false}];
 function eqType(ps,hib){if(ps>=55&&hib>=55)return['Equipe aumentada pronta','Base segura e prática híbrida instaladas — acelere e proteja a cultura.'];
   if(ps>=55&&hib<55)return['Segura, ainda não híbrida','A confiança existe; falta método e permissão para experimentar com IA.'];
   if(ps<55&&hib>=55)return['Usa IA, mas no medo','Alerta: usar IA sem segurança faz esconder uso e erro. Endereçe a segurança primeiro.'];
@@ -291,8 +302,11 @@ document.getElementById('loadTurmas').addEventListener('click',loadTurmas);
 function openDash(code){document.querySelector('.tab[data-tab="dash"]').click();document.getElementById('dashCode').value=code;loadDash();}
 document.getElementById('loadDash').addEventListener('click',loadDash);
 document.getElementById('refreshDash').addEventListener('click',loadDash);
-let lastCode='',lastStudents=[];
+let lastCode='',lastStudents=[],dashMode='instrutor';
 document.getElementById('showNames').addEventListener('change',()=>{if(lastStudents.length)renderDash(lastCode,lastStudents);});
+document.querySelectorAll('.modebtn').forEach(b=>b.addEventListener('click',()=>{
+  dashMode=b.dataset.mode;document.querySelectorAll('.modebtn').forEach(x=>x.classList.toggle('active',x===b));
+  if(lastStudents.length)renderDash(lastCode,lastStudents);}));
 async function loadDash(){
   const code=document.getElementById('dashCode').value.trim();if(!code)return;
   const msg=document.getElementById('dashMsg');
@@ -302,13 +316,14 @@ async function loadDash(){
     const d=await exec([{sql:`SELECT id,nome,payload,atualizado_em FROM respostas WHERE turma=? ORDER BY atualizado_em DESC`,args:[code]}]);
     const rows=rowsOf(d,0);lastCode=code;
     const students=rows.map(r=>{let p={};try{p=JSON.parse(r.payload)}catch(e){}return {id:r.id,nome:r.nome||p.nome||'—',mat:p.mat,atit:p.atit,equipe:p.equipe,org:p.org,at:r.atualizado_em};});
-    lastStudents=students;renderDash(code,students);msg.textContent=students.length+' resposta(s)';document.getElementById('refreshDash').disabled=false;
+    lastStudents=students;document.getElementById('dashModeRow').style.display='flex';renderDash(code,students);msg.textContent=students.length+' resposta(s)';document.getElementById('refreshDash').disabled=false;
   }catch(e){msg.textContent='erro: '+e.message;document.getElementById('dashBody').innerHTML='';}}
 
 function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;}
 function renderDash(code,students){
   const body=document.getElementById('dashBody');
   const showNames=document.getElementById('showNames')&&document.getElementById('showNames').checked;
+  const forClass=dashMode==='turma';
   if(!students.length){body.innerHTML='<div class="card"><div class="empty">Nenhuma resposta nesta turma ainda.</div></div>';return;}
   const withMat=students.filter(s=>s.mat),withAtit=students.filter(s=>s.atit),withEq=students.filter(s=>s.equipe),withOrg=students.filter(s=>s.org);
   const both=withMat.filter(s=>s.atit);
@@ -326,6 +341,12 @@ function renderDash(code,students){
   const weakDim=dimRank[0],strongDim=dimRank[dimRank.length-1];
   let cSuper=0,cSub=0,cCal=0,cFlag=0;
   withMat.forEach(s=>{const g=(s.mat.percOverall||0)-(s.mat.demoOverall||0);if(g>18)cSuper++;else if(g<-18)cSub++;else cCal++;if(s.mat.overclaim>=0.67||s.mat.consistency<0.65)cFlag++;});
+  // conceitos (termos reais conhecidos × inexistentes "reconhecidos")
+  const withTerms=withMat.filter(s=>Array.isArray(s.mat.terms)&&s.mat.terms.length===TERMS.length);
+  const termAgg=TERMS.map((t,i)=>({t:t.t,real:t.real,n:withTerms.filter(s=>s.mat.terms[i]===1).length}));
+  const realT=termAgg.filter(x=>x.real).slice().sort((a,b)=>a.n-b.n);
+  const fakeT=termAgg.filter(x=>!x.real).slice().sort((a,b)=>b.n-a.n);
+  const fakeClaims=fakeT.reduce((a,b)=>a+b.n,0);
   const favor=withAtit.filter(s=>s.atit.atitude>=50).length, reserv=withAtit.length-favor;
   let rOver=0,rUnder=0,rCal=0;withAtit.forEach(s=>{if(s.atit.reliance>=68)rOver++;else if(s.atit.reliance<=32)rUnder++;else rCal++;});
   const lowvarN=withAtit.filter(s=>s.atit.lowvar).length;
@@ -363,7 +384,7 @@ function renderDash(code,students){
   if(cSuper>=Math.max(2,Math.ceil(withMat.length*0.3))) T.push('Parcela relevante em superconfiança — solo fértil para viés de automação (aceitar a IA sem checar).');
   if(psSpread>=35&&psVals.length>1) T.push(`As percepções de segurança variam de ${Math.min(...psVals)} a ${Math.max(...psVals)} — pessoas na mesma turma vivem realidades muito diferentes.`);
   if(lowvarN) T.push(`${lowvarN} resposta(s) de atitude vieram uniformes — leia esses casos com cautela, o índice tende ao centro sem significar neutralidade real.`);
-  html+=`<div class="panel briefing" style="margin-top:16px"><h3>Leitura da turma</h3><div class="h-sub">um retrato para guiar a conversa — não um veredito</div>
+  html+=forClass?'':`<div class="panel briefing" style="margin-top:16px"><h3>Leitura da turma<span class="forme-tag">só para você</span></h3><div class="h-sub">um retrato para guiar a conversa — não um veredito</div>
     ${N.length?N.map(p=>`<p>${p}</p>`).join(''):'<p class="note">Aguardando respostas suficientes para uma leitura.</p>'}
     ${T.length?('<div style="margin-top:6px">'+T.map(t=>`<div class="tension">${t}</div>`).join('')+'</div>'):''}</div>`;
 
@@ -379,8 +400,10 @@ function renderDash(code,students){
   if(topBot) P.push([`Gargalo de área mais citado: ${topBot[0]} (${topBot[1]}).`,`“Se a gente destravasse ${topBot[0].toLowerCase()}, o que mudaria primeiro no trabalho de vocês?”`]);
   if(rOver) P.push([`${rOver} com tendência a confiar demais na IA.`,'“Onde fica a linha entre usar a IA como insumo e terceirizar a decisão?”']);
   if(cSub) P.push([`${cSub} pessoa(s) se subestimam.`,'“O que faria você confiar mais no próprio julgamento sobre IA?”']);
-  const Ptop=P.slice(0,7);
-  html+=`<div class="panel" style="margin-top:16px"><h3>Pauta para a sala</h3><div class="h-sub">perguntas tiradas dos dados desta turma — use as que fizerem sentido</div>
+  if(withTerms.length&&realT[0]&&realT[0].n<=withTerms.length*0.5) P.push([`Termo real menos conhecido: ${realT[0].t} (${realT[0].n}/${withTerms.length}).`,`“Quem consegue explicar ${realT[0].t.toLowerCase()} em uma frase? Onde isso aparece no trabalho?”`]);
+  if(fakeClaims>0) P.push([`${fakeClaims} marcação(ões) em termos que não existem.`,'“O que nos leva a ‘reconhecer’ um conceito que nunca existiu? Como esse reflexo aparece ao usar IA?”']);
+  const Ptop=P.slice(0,8);
+  html+=forClass?'':`<div class="panel" style="margin-top:16px"><h3>Pauta para a sala<span class="forme-tag">só para você</span></h3><div class="h-sub">perguntas tiradas dos dados desta turma — use as que fizerem sentido</div>
     ${Ptop.length?('<ol class="prompts">'+Ptop.map(p=>`<li><div class="d">${p[0]}</div><div class="a">${p[1]}</div></li>`).join('')+'</ol>'):'<p class="note">Sem dados suficientes para gerar a pauta.</p>'}</div>`;
 
   /* ---- maturidade: distribuição + scatter ---- */
@@ -422,8 +445,17 @@ function renderDash(code,students){
     ${bar('Prontidão híbrida',hibM||0,'var(--ia)',hibVals.length?Math.round(hibM):'')}
     <p class="note" style="margin-top:8px">Segurança varia de ${Math.min(...psVals)} a ${Math.max(...psVals)} · prontidão híbrida de ${Math.min(...hibVals)} a ${Math.max(...hibVals)} entre os respondentes.</p>`:'<p class="note">Sem respostas de equipe ainda.</p>'}</div>`;
 
-  /* ---- tabela ---- */
-  html+=`<div class="panel" style="margin-top:16px"><h3>Respondentes</h3><div style="overflow-x:auto"><table class="students">
+  /* ---- conceitos: reais × inexistentes ---- */
+  const tt=withTerms.length||1;
+  const realBars=realT.map(x=>bar(x.t,x.n/tt*100,x.n<=tt*0.4?'var(--warn)':'var(--ia)',x.n)).join('');
+  const fakeBars=fakeT.map(x=>bar(x.t,x.n/tt*100,x.n?'var(--warn)':'var(--ok)',x.n)).join('');
+  html+=`<div class="grid2" style="margin-top:16px">
+    <div class="panel"><h3>Conceitos que dizem conhecer</h3><div class="h-sub">${withTerms.length} responderam · termos reais — <span style="color:var(--warn)">■</span> menos conhecidos (lacunas)</div>${withTerms.length?realBars:'<p class="note">Sem dados de conceitos ainda.</p>'}</div>
+    <div class="panel"><h3>Termos que não existem</h3><div class="h-sub">conceitos inventados — quem marca, superestima o próprio domínio</div>${withTerms.length?(fakeBars+`<div class="miniflag ${fakeClaims?'warn':'ok'}">${fakeClaims?(fakeClaims+' marcação(ões) em termos inexistentes — ótimo gancho de conversa.'):'Ninguém marcou os termos inventados.'}</div>`):'<p class="note">Sem dados de conceitos ainda.</p>'}</div>
+  </div>`;
+
+  /* ---- tabela (só para você) ---- */
+  html+=forClass?'':`<div class="panel" style="margin-top:16px"><h3>Respondentes<span class="forme-tag">só para você</span></h3><div style="overflow-x:auto"><table class="students">
     <thead><tr><th>Nome</th><th>Maturidade</th><th>Atitude</th><th>Confiança</th><th>Seg.</th><th>Área</th></tr></thead><tbody>
     ${students.map((s,i)=>`<tr>
       <td>${showNames?s.nome:'Participante '+(i+1)}</td>

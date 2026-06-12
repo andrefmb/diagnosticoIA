@@ -386,6 +386,7 @@ function computeMat(silent){
   const tb=document.getElementById('termsBox');
   let fakes=0,fakesTot=0;TERMS.forEach((t,i)=>{if(!t.real){fakesTot++;if(tb.querySelector(`[data-i="${i}"]`).classList.contains('on'))fakes++;}});
   const overclaim=fakesTot?fakes/fakesTot:0;
+  const termsSel=TERMS.map((t,i)=>tb.querySelector(`[data-i="${i}"]`).classList.contains('on')?1:0);  // 1/0 por termo, na ordem de TERMS
   const raw=SELF.map((_,i)=>val('s'+i));
   const selfByDim={},cnt={};DIMS.forEach(d=>{selfByDim[d.key]=0;cnt[d.key]=0;});
   SELF.forEach((it,i)=>{let v=raw[i];if(it.rev)v=6-v;selfByDim[it.dim]+=v;cnt[it.dim]++;});
@@ -401,7 +402,7 @@ function computeMat(silent){
   const overall=Math.round(DIMS.reduce((a,d)=>a+dimScore[d.key],0)/DIMS.length);
   const percOverall=DIMS.reduce((a,d)=>a+selfByDim[d.key],0)/DIMS.length;
   const demoOverall=DIMS.reduce((a,d)=>a+demo[d.key],0)/DIMS.length;
-  S.mat={overall,stage:scoreToStage(overall),dimScore,overclaim:+overclaim.toFixed(2),consistency:+consistency.toFixed(2),percOverall:Math.round(percOverall),demoOverall:Math.round(demoOverall)};
+  S.mat={overall,stage:scoreToStage(overall),dimScore,overclaim:+overclaim.toFixed(2),consistency:+consistency.toFixed(2),percOverall:Math.round(percOverall),demoOverall:Math.round(demoOverall),terms:termsSel};
   save();updateHub();if(!silent)syncRemote();renderMatResult();
 }
 function renderMatResult(){
