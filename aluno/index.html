@@ -451,12 +451,15 @@ function saveAtitRaw(){S.atitRaw=ATIT.map((_,i)=>val('a'+i));save();}
 document.getElementById('atitDone').addEventListener('click',()=>{computeAtit();syncRemote();});
 function computeAtit(silent){const by={pos:[],neg:[],over:[],under:[]};ATIT.forEach((it,i)=>by[it.g].push(val('a'+i)));
   const m=a=>a.reduce((x,y)=>x+y,0)/a.length;const pos=m(by.pos),neg=m(by.neg),over=m(by.over),under=m(by.under);
-  S.atit={atitude:Math.round(((pos-neg)+4)/8*100),reliance:Math.round((over-under)/4*50+50)};save();updateHub();if(!silent)renderAtitResult();}
+  const allv=ATIT.map((_,i)=>val('a'+i));const lowvar=(Math.max(...allv)-Math.min(...allv))<=1;  // marcou quase tudo no mesmo ponto
+  S.atit={atitude:Math.round(((pos-neg)+4)/8*100),reliance:Math.round((over-under)/4*50+50),lowvar};save();updateHub();if(!silent)renderAtitResult();}
 function renderAtitResult(){const a=S.atit;let rb,rt;
   if(a.reliance>=68){rb='Superconfiança';rt='Tende a se apoiar demais na IA — risco de viés de automação. Cheque mesmo quando a resposta parece boa.';}
   else if(a.reliance<=32){rb='Subconfiança';rt='Resiste a usar a IA mesmo quando ela ajudaria. Vale experimentar em baixo risco.';}
   else{rb='Confiança calibrada';rt='Usa a IA como insumo sem se entregar a ela — o ponto de equilíbrio.';}
-  document.getElementById('atitRes').innerHTML=`<div class="section-lab">Seu resultado</div><div class="card"><div class="result-grid">
+  document.getElementById('atitRes').innerHTML=`<div class="section-lab">Seu resultado</div><div class="card">
+    ${a.lowvar?'<div class="flag warn" style="margin-bottom:14px"><b>Respostas uniformes.</b> Você marcou quase tudo no mesmo ponto. Como as frases medem coisas opostas (entusiasmo de um lado, receio do outro), elas se anulam e o resultado tende ao centro — 50 não significa aqui um diagnóstico, e sim ausência de sinal. Vale refazer marcando o quanto <i>cada</i> frase realmente descreve você.</div>':''}
+    <div class="result-grid">
     <div><div class="barline"><span class="nm">Atitude líquida</span><span class="track"><span class="f" style="width:${a.atitude}%;background:var(--ia)"></span></span><span class="v">${a.atitude}</span></div>
     <div class="barline"><span class="nm">Calibração de confiança</span><span class="track"><span class="f" style="width:${a.reliance}%;background:var(--humano)"></span></span><span class="v">${a.reliance}</span></div>
     <p class="note" style="margin-top:8px">Atitude: 50 é neutro. Confiança: 50 é calibrado.</p></div>
