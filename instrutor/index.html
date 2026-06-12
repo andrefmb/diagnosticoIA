@@ -87,6 +87,22 @@
     .turma-item .meta{margin-left:0;width:100%}
   }
   @media (max-width:380px){.kpis{grid-template-columns:1fr}}
+  /* analítico — facilitação */
+  .briefing{border-left:4px solid var(--ia)}
+  .briefing p{font-size:14.5px;color:var(--ink-soft);margin:7px 0;line-height:1.55}
+  .tension{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;color:var(--ink-soft);padding:9px 0;border-top:1px solid var(--line)}
+  .tension::before{content:"▲";color:var(--warn);font-size:11px;line-height:1.5;flex:none}
+  .prompts{list-style:none;padding:0;margin:6px 0 0;counter-reset:p}
+  .prompts li{padding:12px 0;border-top:1px solid var(--line)}.prompts li:first-child{border-top:none;padding-top:2px}
+  .prompts .d{font-size:12.5px;color:var(--muted);margin-bottom:4px}
+  .prompts .a{font-size:14.5px;color:var(--ink);font-weight:500}
+  .quadgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-top:12px}
+  .quadcell{display:flex;justify-content:space-between;align-items:center;font-size:13px;border:1px solid var(--line);border-radius:9px;padding:8px 11px}
+  .quadcell .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  .quadcell b{font-family:'Archivo';font-size:17px}
+  .badge-inline{display:inline-block;font-family:'Archivo';font-weight:700;font-size:14px;padding:5px 12px;border-radius:9px;color:#fff;margin-bottom:6px}
+  .miniflag{border-radius:9px;padding:9px 12px;font-size:12.5px;margin-top:10px}
+  .miniflag.warn{background:var(--warn-soft);color:#6a2418;border:1px solid #e6c4bc}.miniflag.ok{background:#E2EDE4;color:#2c4d34;border:1px solid #bcdac2}
   /* gate de acesso */
   #gate-lock{position:fixed;inset:0;z-index:9999;background:var(--paper);display:flex;align-items:center;justify-content:center;padding:24px}
   #gate-lock.hidden{display:none}
@@ -211,6 +227,12 @@ const TURSO_TOKEN = _dec("3RkN3xGVVRUR5InblJ2Rz1SW2YXWtIHTYB1QKFkePVmMvl1V6NXTyQ
 
 const STAGES=[{n:'Espectador',c:'var(--s1)'},{n:'Experimentador',c:'var(--s2)'},{n:'Praticante',c:'var(--s3)'},{n:'Integrador',c:'var(--s4)'},{n:'Orquestrador',c:'var(--s5)'}];
 const ORG_DOMS=['Estratégia','Dados','Talento','Governança','Cultura'];
+const ORG_STAGES=['Fundacional','Emergente','Operacional','Sistêmico','Transformacional'];
+const MAT_DIMS=[{k:'ent',n:'Entender IA'},{k:'usar',n:'Usar & aplicar'},{k:'disc',n:'Discernir'},{k:'etic',n:'Ética & resp.'},{k:'dec',n:'Decisão aumentada'},{k:'orq',n:'Orquestração'}];
+function eqType(ps,hib){if(ps>=55&&hib>=55)return['Equipe aumentada pronta','Base segura e prática híbrida instaladas — acelere e proteja a cultura.'];
+  if(ps>=55&&hib<55)return['Segura, ainda não híbrida','A confiança existe; falta método e permissão para experimentar com IA.'];
+  if(ps<55&&hib>=55)return['Usa IA, mas no medo','Alerta: usar IA sem segurança faz esconder uso e erro. Endereçe a segurança primeiro.'];
+  return['Começo de jornada','Comece pela segurança psicológica — sem ela, nenhuma prática híbrida se sustenta.'];}
 
 /* ============ TURSO ============ */
 function configured(){return TURSO_URL.trim()!==""&&TURSO_TOKEN.trim()!=="";}
@@ -289,38 +311,118 @@ function renderDash(code,students){
   const showNames=document.getElementById('showNames')&&document.getElementById('showNames').checked;
   if(!students.length){body.innerHTML='<div class="card"><div class="empty">Nenhuma resposta nesta turma ainda.</div></div>';return;}
   const withMat=students.filter(s=>s.mat),withAtit=students.filter(s=>s.atit),withEq=students.filter(s=>s.equipe),withOrg=students.filter(s=>s.org);
+  const both=withMat.filter(s=>s.atit);
   const stageMean=avg(withMat.map(s=>s.mat.stage+1));
   const atitMean=avg(withAtit.map(s=>s.atit.atitude));
-  const psMean=avg(withEq.map(s=>s.equipe.ps));
-  // kpis
-  let html=`<div class="kpis">
-    <div class="kpi"><div class="lab">Respondentes</div><div class="v">${students.length}</div><div class="sub">turma ${code}</div></div>
-    <div class="kpi"><div class="lab">Estágio médio</div><div class="v">${stageMean?stageMean.toFixed(1):'—'}</div><div class="sub">${withMat.length} fizeram maturidade</div></div>
-    <div class="kpi"><div class="lab">Atitude média</div><div class="v">${atitMean!=null?Math.round(atitMean):'—'}</div><div class="sub">50 = neutro</div></div>
-    <div class="kpi"><div class="lab">Seg. psicológica</div><div class="v">${psMean!=null?Math.round(psMean):'—'}</div><div class="sub">média da turma</div></div>
-  </div>`;
-  // stage distribution + scatter
+  const clamp=v=>Math.max(0,Math.min(100,v||0));
+  const bar=(nm,val,color,lab)=>`<div class="distbar"><span class="nm">${nm}</span><span class="track"><span class="f" style="width:${clamp(val)}%;background:${color}">${lab!=null?lab:''}</span></span></div>`;
+
+  /* ---- estatísticas ---- */
   const dist=[0,0,0,0,0];withMat.forEach(s=>dist[s.mat.stage]++);
   const maxd=Math.max(1,...dist);
-  let distHtml=STAGES.map((s,i)=>`<div class="distbar"><span class="nm">${i+1} · ${s.n}</span><span class="track"><span class="f" style="width:${dist[i]/maxd*100}%;background:${s.c}">${dist[i]||''}</span></span></div>`).join('');
-  html+=`<div class="grid2">
-    <div class="panel"><h3>Distribuição de maturidade</h3><div class="h-sub">onde a turma está na jornada</div>${distHtml}</div>
-    <div class="panel"><h3>Capacidade × atitude</h3><div class="h-sub">cada ponto é um aluno (precisa das duas lentes)</div><svg id="scatter" viewBox="0 0 260 240" width="100%" style="max-width:300px;display:block;margin:0 auto"></svg></div>
-  </div>`;
-  // org radar + equipe
+  const domStageIdx=withMat.length?dist.indexOf(Math.max(...dist)):-1;
+  const dimAvg=MAT_DIMS.map(d=>({k:d.k,n:d.n,v:avg(withMat.map(s=>s.mat.dimScore?s.mat.dimScore[d.k]:null).filter(x=>x!=null))}));
+  const dimRank=dimAvg.filter(d=>d.v!=null).sort((a,b)=>a.v-b.v);
+  const weakDim=dimRank[0],strongDim=dimRank[dimRank.length-1];
+  let cSuper=0,cSub=0,cCal=0,cFlag=0;
+  withMat.forEach(s=>{const g=(s.mat.percOverall||0)-(s.mat.demoOverall||0);if(g>18)cSuper++;else if(g<-18)cSub++;else cCal++;if(s.mat.overclaim>=0.67||s.mat.consistency<0.65)cFlag++;});
+  const favor=withAtit.filter(s=>s.atit.atitude>=50).length, reserv=withAtit.length-favor;
+  let rOver=0,rUnder=0,rCal=0;withAtit.forEach(s=>{if(s.atit.reliance>=68)rOver++;else if(s.atit.reliance<=32)rUnder++;else rCal++;});
+  const lowvarN=withAtit.filter(s=>s.atit.lowvar).length;
+  let qA=0,qC=0,qE=0,qM=0;
+  both.forEach(s=>{const hiCap=s.mat.stage>=3,hiAtt=s.atit.atitude>=50;if(hiCap&&hiAtt)qA++;else if(hiCap)qC++;else if(hiAtt)qE++;else qM++;});
+  const quads=[{nm:'Aliados / multiplicadores',n:qA,c:'var(--ok)'},{nm:'Céticos competentes',n:qC,c:'var(--ia)'},{nm:'Entusiastas',n:qE,c:'var(--humano)'},{nm:'À margem',n:qM,c:'var(--muted)'}];
+  const domQuad=both.length?[...quads].sort((a,b)=>b.n-a.n)[0]:null;
+  const psVals=withEq.map(s=>s.equipe.ps),hibVals=withEq.map(s=>s.equipe.hib);
+  const psM=avg(psVals),hibM=avg(hibVals);
+  const psSpread=psVals.length?Math.max(...psVals)-Math.min(...psVals):0;
   const domAvg=ORG_DOMS.map(dn=>{const vals=withOrg.map(s=>{const d=(s.org.doms||[]).find(x=>x.dom===dn);return d?d.score:null}).filter(v=>v!=null);return avg(vals);});
   const botCount={};withOrg.forEach(s=>{if(s.org.bottleneck)botCount[s.org.bottleneck]=(botCount[s.org.bottleneck]||0)+1;});
   const topBot=Object.entries(botCount).sort((a,b)=>b[1]-a[1])[0];
-  const psVals=withEq.map(s=>s.equipe.ps),hibVals=withEq.map(s=>s.equipe.hib);
-  html+=`<div class="grid2">
-    <div class="panel"><h3>Prontidão da área (média)</h3><div class="h-sub">${topBot?('gargalo mais citado: <b>'+topBot[0]+'</b> ('+topBot[1]+')'):'sem dados de área'}</div><svg id="orgRadar" viewBox="0 0 260 240" width="100%" style="max-width:300px;display:block;margin:0 auto"></svg></div>
-    <div class="panel"><h3>Equipe</h3><div class="h-sub">média e dispersão (a divergência também é diagnóstico)</div>
-      <div class="distbar"><span class="nm">Seg. psicológica</span><span class="track"><span class="f" style="width:${avg(psVals)||0}%;background:var(--equipe)">${psVals.length?Math.round(avg(psVals)):''}</span></span></div>
-      <div class="distbar"><span class="nm">Prontidão híbrida</span><span class="track"><span class="f" style="width:${avg(hibVals)||0}%;background:var(--ia)">${hibVals.length?Math.round(avg(hibVals)):''}</span></span></div>
-      <p class="note" style="margin-top:8px">${psVals.length?('Segurança varia de '+Math.min(...psVals)+' a '+Math.max(...psVals)+' entre os respondentes.'):'Sem respostas de equipe ainda.'}</p>
-    </div>
+  const orgM=avg(withOrg.map(s=>s.org.overall));
+
+  /* ---- KPIs ---- */
+  let html=`<div class="kpis">
+    <div class="kpi"><div class="lab">Respondentes</div><div class="v">${students.length}</div><div class="sub">turma ${code}</div></div>
+    <div class="kpi"><div class="lab">Estágio médio</div><div class="v">${stageMean?stageMean.toFixed(1):'—'}</div><div class="sub">${withMat.length} de ${students.length} fizeram</div></div>
+    <div class="kpi"><div class="lab">Clima de atitude</div><div class="v">${atitMean!=null?Math.round(atitMean):'—'}</div><div class="sub">${withAtit.length?favor+' favoráveis · '+reserv+' c/ reservas':'50 = neutro'}</div></div>
+    <div class="kpi"><div class="lab">Seg. psicológica</div><div class="v">${psM!=null?Math.round(psM):'—'}</div><div class="sub">${psVals.length?'varia '+Math.min(...psVals)+'–'+Math.max(...psVals):'média da turma'}</div></div>
   </div>`;
-  // tabela
+
+  /* ---- Leitura da turma + tensões ---- */
+  const N=[];
+  if(withMat.length&&domStageIdx>=0) N.push(`A turma se concentra em <b>${STAGES[domStageIdx].n}</b> (${dist[domStageIdx]} de ${withMat.length}), com estágio médio <b>${stageMean.toFixed(1)}</b> de 5.`);
+  if(domQuad) N.push(`No cruzamento capacidade × atitude, o grupo predominante é <b>${domQuad.nm}</b> (${domQuad.n} de ${both.length}).`);
+  if(withAtit.length){const climate=favor>reserv?'majoritariamente favorável':(reserv>favor?'predominantemente com reservas':'dividido ao meio');N.push(`O clima de atitude está <b>${climate}</b> — ${favor} favoráveis, ${reserv} com reservas${rOver?`, e ${rOver} com tendência a confiar demais na IA`:''}.`);}
+  if(withMat.length&&(cSuper||cSub)) N.push(`Na calibração, <b>${cSuper}</b> se superavaliam e <b>${cSub}</b> se subestimam (${cCal} calibrados).${cSuper>cSub?' O ponto cego dominante é a superconfiança.':(cSub>cSuper?' A turma tende a se subestimar — capacidade subaproveitada.':'')}`);
+  if(weakDim&&strongDim&&weakDim.k!==strongDim.k) N.push(`A competência mais frágil do grupo é <b>${weakDim.n}</b> (${Math.round(weakDim.v)}/100); a mais forte, <b>${strongDim.n}</b> (${Math.round(strongDim.v)}/100).`);
+  const T=[];
+  if(stageMean>=3&&psM!=null&&psM<55) T.push('Há gente pronta individualmente, mas a segurança psicológica do time não acompanha — risco de virar referência solitária enquanto pessoas usam IA escondido.');
+  if(hibM!=null&&hibM>=55&&orgM!=null&&orgM<45) T.push(`O time tem energia para IA, mas a área trava${topBot?(' em '+topBot[0].toLowerCase()):''} — sem destravar isso, o esforço local não escala.`);
+  if(qE>qA&&qE>0) T.push('O entusiasmo supera a capacidade na maior parte da turma — terreno para uso ingênuo, sem o hábito de verificar.');
+  if(cSuper>=Math.max(2,Math.ceil(withMat.length*0.3))) T.push('Parcela relevante em superconfiança — solo fértil para viés de automação (aceitar a IA sem checar).');
+  if(psSpread>=35&&psVals.length>1) T.push(`As percepções de segurança variam de ${Math.min(...psVals)} a ${Math.max(...psVals)} — pessoas na mesma turma vivem realidades muito diferentes.`);
+  if(lowvarN) T.push(`${lowvarN} resposta(s) de atitude vieram uniformes — leia esses casos com cautela, o índice tende ao centro sem significar neutralidade real.`);
+  html+=`<div class="panel briefing" style="margin-top:16px"><h3>Leitura da turma</h3><div class="h-sub">um retrato para guiar a conversa — não um veredito</div>
+    ${N.length?N.map(p=>`<p>${p}</p>`).join(''):'<p class="note">Aguardando respostas suficientes para uma leitura.</p>'}
+    ${T.length?('<div style="margin-top:6px">'+T.map(t=>`<div class="tension">${t}</div>`).join('')+'</div>'):''}</div>`;
+
+  /* ---- Pauta para a sala ---- */
+  const P=[];
+  if(cSuper) P.push([`${cSuper} pessoa(s) se avaliam acima do que demonstram.`,'“Conte uma vez em que você confiou numa resposta de IA e ela estava errada — como percebeu?”']);
+  if(qC) P.push([`${qC} cético(s) competente(s): sabem usar, mas têm reservas.`,'“Quem aqui sabe usar IA e mesmo assim evita em certas situações? O que pesa nessa escolha?” (ouça, não convença)']);
+  if(qE) P.push([`${qE} entusiasta(s): muita vontade, base ainda em formação.`,'“Qual foi a última vez que a IA te decepcionou? O que faria diferente?”']);
+  if(qM) P.push([`${qM} pessoa(s) à margem.`,'“Que primeiro uso pequeno e concreto valeria tentar já nesta semana?”']);
+  if(weakDim&&weakDim.v!=null) P.push([`Competência mais fraca da turma: ${weakDim.n} (${Math.round(weakDim.v)}/100).`,`“O que torna ${weakDim.n.toLowerCase()} difícil no dia a dia de vocês?”`]);
+  if(psM!=null&&psM<55) P.push([`Segurança psicológica média baixa (${Math.round(psM)}).`,'“É seguro, neste time, dizer ‘usei IA e errei’? O que precisaria mudar para ser?”']);
+  if(psSpread>=35&&psVals.length>1) P.push([`Percepções de segurança muito divididas (${Math.min(...psVals)}–${Math.max(...psVals)}).`,'“Por que duas pessoas da mesma área enxergam a segurança de formas tão diferentes?”']);
+  if(topBot) P.push([`Gargalo de área mais citado: ${topBot[0]} (${topBot[1]}).`,`“Se a gente destravasse ${topBot[0].toLowerCase()}, o que mudaria primeiro no trabalho de vocês?”`]);
+  if(rOver) P.push([`${rOver} com tendência a confiar demais na IA.`,'“Onde fica a linha entre usar a IA como insumo e terceirizar a decisão?”']);
+  if(cSub) P.push([`${cSub} pessoa(s) se subestimam.`,'“O que faria você confiar mais no próprio julgamento sobre IA?”']);
+  const Ptop=P.slice(0,7);
+  html+=`<div class="panel" style="margin-top:16px"><h3>Pauta para a sala</h3><div class="h-sub">perguntas tiradas dos dados desta turma — use as que fizerem sentido</div>
+    ${Ptop.length?('<ol class="prompts">'+Ptop.map(p=>`<li><div class="d">${p[0]}</div><div class="a">${p[1]}</div></li>`).join('')+'</ol>'):'<p class="note">Sem dados suficientes para gerar a pauta.</p>'}</div>`;
+
+  /* ---- maturidade: distribuição + scatter ---- */
+  const distHtml=STAGES.map((s,i)=>`<div class="distbar"><span class="nm">${i+1} · ${s.n}</span><span class="track"><span class="f" style="width:${dist[i]/maxd*100}%;background:${s.c}">${dist[i]||''}</span></span></div>`).join('');
+  html+=`<div class="grid2">
+    <div class="panel"><h3>Distribuição de maturidade</h3><div class="h-sub">onde a turma está na jornada</div>${withMat.length?distHtml:'<p class="note">Sem dados de maturidade ainda.</p>'}</div>
+    <div class="panel"><h3>Capacidade × atitude</h3><div class="h-sub">cada ponto é um respondente, colorido por grupo</div>
+      <svg id="scatter" viewBox="0 0 260 240" width="100%" style="max-width:300px;display:block;margin:0 auto"></svg>
+      <div class="quadgrid">${quads.map(q=>`<div class="quadcell"><span><span class="dot" style="background:${q.c}"></span>${q.nm}</span><b>${q.n}</b></div>`).join('')}</div></div>
+  </div>`;
+
+  /* ---- competências do grupo + calibração ---- */
+  const dimBars=dimAvg.map(d=>{const isW=weakDim&&d.k===weakDim.k,isS=strongDim&&d.k===strongDim.k&&dimRank.length>1;const col=isW?'var(--warn)':(isS?'var(--ok)':'var(--s4)');return bar(d.n,d.v||0,col,d.v!=null?Math.round(d.v):'—');}).join('');
+  const calTot=withMat.length||1;
+  const calBars=[['Superavaliam-se',cSuper,'var(--warn)'],['Calibrados',cCal,'var(--ok)'],['Subestimam-se',cSub,'var(--ia)']].map(c=>bar(c[0],c[1]/calTot*100,c[2],c[1]||'')).join('');
+  html+=`<div class="grid2">
+    <div class="panel"><h3>Mapa de competências da turma</h3><div class="h-sub">média por dimensão · <span style="color:var(--warn)">■</span> mais frágil · <span style="color:var(--ok)">■</span> mais forte</div>${withMat.length?dimBars:'<p class="note">Sem dados de maturidade ainda.</p>'}</div>
+    <div class="panel"><h3>Calibração da turma</h3><div class="h-sub">quantos sabem o que sabem</div>${withMat.length?calBars:'<p class="note">Sem dados de maturidade ainda.</p>'}
+      ${cFlag?`<div class="miniflag warn">${cFlag} resposta(s) com sinais de superestimativa/inconsistência — trate como ponto de conversa, não como nota.</div>`:''}</div>
+  </div>`;
+
+  /* ---- clima de atitude + prontidão da área ---- */
+  const atTot=withAtit.length||1;
+  const climBars=bar('Favoráveis',favor/atTot*100,'var(--ia)',favor||'')+bar('Com reservas',reserv/atTot*100,'var(--warn)',reserv||'');
+  const relBars=bar('Confiança calibrada',rCal/atTot*100,'var(--ok)',rCal||'')+bar('Confiam demais',rOver/atTot*100,'var(--warn)',rOver||'')+bar('Resistem à IA',rUnder/atTot*100,'var(--humano)',rUnder||'');
+  html+=`<div class="grid2">
+    <div class="panel"><h3>Clima de atitude</h3><div class="h-sub">o sentimento da turma diante da IA</div>${withAtit.length?(climBars+'<div style="height:8px"></div>'+relBars):'<p class="note">Sem dados de atitude ainda.</p>'}
+      ${lowvarN?`<div class="miniflag warn">${lowvarN} resposta(s) uniforme(s) — pouco sinal, tendem ao centro.</div>`:''}</div>
+    <div class="panel"><h3>Prontidão da área</h3><div class="h-sub">${topBot?('gargalo mais citado: <b>'+topBot[0]+'</b> ('+topBot[1]+')'):'média por domínio'}</div>
+      <svg id="orgRadar" viewBox="0 0 260 240" width="100%" style="max-width:300px;display:block;margin:0 auto"></svg>
+      ${Object.keys(botCount).length?('<p class="note" style="margin-top:6px">Gargalos citados: '+Object.entries(botCount).sort((a,b)=>b[1]-a[1]).map(e=>e[0]+' ('+e[1]+')').join(' · ')+'</p>'):''}</div>
+  </div>`;
+
+  /* ---- equipe ---- */
+  const eq=eqType(psM||0,hibM||0);
+  html+=`<div class="panel" style="margin-top:16px"><h3>Equipe aumentada</h3><div class="h-sub">média e dispersão — a divergência também é diagnóstico</div>
+    ${withEq.length?`<span class="badge-inline" style="background:var(--equipe)">${eq[0]}</span><p class="note" style="margin:0 0 10px">${eq[1]}</p>
+    ${bar('Seg. psicológica',psM||0,'var(--equipe)',psVals.length?Math.round(psM):'')}
+    ${bar('Prontidão híbrida',hibM||0,'var(--ia)',hibVals.length?Math.round(hibM):'')}
+    <p class="note" style="margin-top:8px">Segurança varia de ${Math.min(...psVals)} a ${Math.max(...psVals)} · prontidão híbrida de ${Math.min(...hibVals)} a ${Math.max(...hibVals)} entre os respondentes.</p>`:'<p class="note">Sem respostas de equipe ainda.</p>'}</div>`;
+
+  /* ---- tabela ---- */
   html+=`<div class="panel" style="margin-top:16px"><h3>Respondentes</h3><div style="overflow-x:auto"><table class="students">
     <thead><tr><th>Nome</th><th>Maturidade</th><th>Atitude</th><th>Confiança</th><th>Seg.</th><th>Área</th></tr></thead><tbody>
     ${students.map((s,i)=>`<tr>
@@ -331,16 +433,18 @@ function renderDash(code,students){
       <td>${s.equipe?s.equipe.ps:'—'}</td>
       <td>${s.org?(s.org.overall+' · '+(s.org.bottleneck||'')):'—'}</td>
     </tr>`).join('')}</tbody></table></div></div>`;
+
   body.innerHTML=html;
-  drawScatter(withMat.filter(s=>s.atit));
+  drawScatter(both);
   drawOrgRadar(domAvg);
 }
 function drawScatter(students){const svg=document.getElementById('scatter');if(!svg)return;const m=22,sz=196,x0=m,y0=m;
   let s=`<rect x="${x0}" y="${y0}" width="${sz}" height="${sz}" fill="#FBFAF7" stroke="var(--line-strong)"/>`;
   s+=`<line x1="${x0+sz/2}" y1="${y0}" x2="${x0+sz/2}" y2="${y0+sz}" stroke="var(--line)" stroke-dasharray="3 3"/><line x1="${x0}" y1="${y0+sz/2}" x2="${x0+sz}" y2="${y0+sz/2}" stroke="var(--line)" stroke-dasharray="3 3"/>`;
-  [['À margem',.26,15],['Entusiasta',.73,15],['Cético comp.',.26,sz-8],['Aliado',.73,sz-8]].forEach(l=>s+=`<text x="${x0+sz*l[1]}" y="${y0+l[2]}" font-family="Archivo" font-size="9" font-weight="700" fill="var(--muted)" text-anchor="middle">${l[0]}</text>`);
+  [['Cético comp.',.26,15],['Aliado',.73,15],['À margem',.26,sz-8],['Entusiasta',.73,sz-8]].forEach(l=>s+=`<text x="${x0+sz*l[1]}" y="${y0+l[2]}" font-family="Archivo" font-size="9" font-weight="700" fill="var(--muted)" text-anchor="middle">${l[0]}</text>`);
   s+=`<text x="${x0+sz/2}" y="${y0+sz+15}" font-family="IBM Plex Mono" font-size="8" fill="var(--ia)" text-anchor="middle">ATITUDE →</text><text x="${x0-7}" y="${y0+sz/2}" font-family="IBM Plex Mono" font-size="8" fill="var(--humano)" text-anchor="middle" transform="rotate(-90 ${x0-7} ${y0+sz/2})">CAPACIDADE →</text>`;
-  students.forEach(st=>{const px=x0+(st.atit.atitude/100)*sz,py=y0+sz-(st.mat.stage/4)*sz;s+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="5" fill="var(--ink)" opacity=".7"/>`;});
+  students.forEach(st=>{const hiCap=st.mat.stage>=3,hiAtt=st.atit.atitude>=50;const col=hiCap&&hiAtt?'var(--ok)':(hiCap?'var(--ia)':(hiAtt?'var(--humano)':'var(--muted)'));
+    const px=x0+(st.atit.atitude/100)*sz,py=y0+sz-(st.mat.stage/4)*sz;s+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="5.5" fill="${col}" opacity=".8"/>`;});
   svg.innerHTML=s;}
 function drawOrgRadar(domAvg){const svg=document.getElementById('orgRadar');if(!svg)return;const cx=130,cy=120,Rr=80,N=5,ang=i=>(-90+i*72)*Math.PI/180,pt=(i,r)=>[cx+r*Math.cos(ang(i)),cy+r*Math.sin(ang(i))];
   let s='';for(let ring=1;ring<=4;ring++){let p=[];for(let i=0;i<N;i++){const[x,y]=pt(i,Rr*ring/4);p.push(x.toFixed(1)+','+y.toFixed(1));}s+=`<polygon points="${p.join(' ')}" fill="none" stroke="var(--line)"/>`;}
