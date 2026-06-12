@@ -137,6 +137,7 @@
     <label class="fld">Código da turma</label>
     <input type="text" id="inTurma" placeholder="O código que o instrutor liberou na tela">
     <div id="cfgWarn"></div>
+    <div id="gateErr" class="config-warn" style="display:none"></div>
   </div>
   <div class="nav-row">
     <button class="btn primary" id="enter" disabled>Entrar</button>
@@ -236,7 +237,9 @@ async function tursoExec(statements){
   return data;
 }
 async function ensureSchema(){
-  await tursoExec([{sql:`CREATE TABLE IF NOT EXISTS respostas(id TEXT PRIMARY KEY,turma TEXT NOT NULL,nome TEXT,payload TEXT NOT NULL,atualizado_em TEXT)`}]);
+  await tursoExec([
+    {sql:`CREATE TABLE IF NOT EXISTS respostas(id TEXT PRIMARY KEY,turma TEXT NOT NULL,nome TEXT,payload TEXT NOT NULL,atualizado_em TEXT)`},
+    {sql:`CREATE TABLE IF NOT EXISTS turmas(codigo TEXT PRIMARY KEY,nome TEXT,criada_em TEXT,ativa INTEGER DEFAULT 1)`}]);
 }
 
 /* ============ ESTADO + PERSISTÊNCIA ============ */
@@ -276,12 +279,29 @@ document.getElementById('resync').addEventListener('click',syncRemote);
 
 /* ============ GATE ============ */
 const inNome=document.getElementById('inNome'),inTurma=document.getElementById('inTurma'),enterBtn=document.getElementById('enter');
-function gateCheck(){enterBtn.disabled=!(inNome.value.trim()&&inTurma.value.trim());}
+function gateCheck(){enterBtn.disabled=!(inNome.value.trim()&&inTurma.value.trim());const ge=document.getElementById('gateErr');if(ge)ge.style.display='none';}
 inNome.addEventListener('input',gateCheck);inTurma.addEventListener('input',gateCheck);
 if(!tursoConfigured())document.getElementById('cfgWarn').innerHTML='<div class="config-warn">Modo local: a base não está configurada neste arquivo, então as respostas ficam só neste navegador.</div>';
-enterBtn.addEventListener('click',()=>{S.nome=inNome.value.trim();S.turma=inTurma.value.trim();save();
+function enterHub(nome,turma){S.nome=nome;S.turma=turma;save();
   document.getElementById('hubGreet').textContent='olá, '+S.nome.split(' ')[0]+' · turma '+S.turma;
-  updateHub();show('hub');});
+  updateHub();show('hub');}
+enterBtn.addEventListener('click',async()=>{
+  const nome=inNome.value.trim(),turma=inTurma.value.trim();if(!nome||!turma)return;
+  const err=document.getElementById('gateErr');err.style.display='none';
+  if(!tursoConfigured()){enterHub(nome,turma);return;}  // modo local: não há como validar
+  const old=enterBtn.textContent;enterBtn.disabled=true;enterBtn.textContent='verificando…';
+  try{
+    await ensureSchema();
+    const d=await tursoExec([{sql:`SELECT codigo FROM turmas WHERE UPPER(codigo)=UPPER(?) AND ativa=1`,args:[turma]}]);
+    const res=d.results&&d.results[0];
+    const rows=res&&res.type==='ok'&&res.response&&res.response.result&&res.response.result.rows;
+    if(!rows||!rows.length){
+      err.innerHTML='<b>Código de turma não encontrado.</b> Confira o código que o instrutor liberou na tela — só dá para entrar numa turma já aberta por ele.';
+      err.style.display='block';enterBtn.disabled=false;enterBtn.textContent=old;return;}
+  }catch(e){
+    err.innerHTML='<b>Não consegui validar o código agora.</b> Verifique sua conexão e tente de novo.';
+    err.style.display='block';enterBtn.disabled=false;enterBtn.textContent=old;return;}
+  enterBtn.textContent=old;enterBtn.disabled=false;enterHub(nome,turma);});
 
 /* ============ DADOS DOS INSTRUMENTOS ============ */
 const DIMS=[{key:'ent',nm:'Entender IA',plane:'literacia',c:'var(--ia)'},{key:'usar',nm:'Usar & aplicar',plane:'literacia',c:'var(--ia)'},
