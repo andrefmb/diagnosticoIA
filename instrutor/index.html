@@ -422,7 +422,7 @@ function renderDash(code,students){
   html+=`<div class="grid2">
     <div class="panel"><h3>Mapa de competências da turma</h3><div class="h-sub">média por dimensão · <span style="color:var(--warn)">■</span> mais frágil · <span style="color:var(--ok)">■</span> mais forte</div>${withMat.length?dimBars:'<p class="note">Sem dados de maturidade ainda.</p>'}</div>
     <div class="panel"><h3>Calibração da turma</h3><div class="h-sub">quantos sabem o que sabem</div>${withMat.length?calBars:'<p class="note">Sem dados de maturidade ainda.</p>'}
-      ${cFlag?`<div class="miniflag warn">${cFlag} resposta(s) com sinais de superestimativa/inconsistência — trate como ponto de conversa, não como nota.</div>`:''}</div>
+      ${(!forClass&&cFlag)?`<div class="miniflag warn">${cFlag} resposta(s) com sinais de superestimativa/inconsistência — trate como ponto de conversa, não como nota.</div>`:''}</div>
   </div>`;
 
   /* ---- clima de atitude + prontidão da área ---- */
@@ -431,7 +431,7 @@ function renderDash(code,students){
   const relBars=bar('Confiança calibrada',rCal/atTot*100,'var(--ok)',rCal||'')+bar('Confiam demais',rOver/atTot*100,'var(--warn)',rOver||'')+bar('Resistem à IA',rUnder/atTot*100,'var(--humano)',rUnder||'');
   html+=`<div class="grid2">
     <div class="panel"><h3>Clima de atitude</h3><div class="h-sub">o sentimento da turma diante da IA</div>${withAtit.length?(climBars+'<div style="height:8px"></div>'+relBars):'<p class="note">Sem dados de atitude ainda.</p>'}
-      ${lowvarN?`<div class="miniflag warn">${lowvarN} resposta(s) uniforme(s) — pouco sinal, tendem ao centro.</div>`:''}</div>
+      ${(!forClass&&lowvarN)?`<div class="miniflag warn">${lowvarN} resposta(s) uniforme(s) — pouco sinal, tendem ao centro.</div>`:''}</div>
     <div class="panel"><h3>Prontidão da área</h3><div class="h-sub">${topBot?('gargalo mais citado: <b>'+topBot[0]+'</b> ('+topBot[1]+')'):'média por domínio'}</div>
       <svg id="orgRadar" viewBox="0 0 260 240" width="100%" style="max-width:300px;display:block;margin:0 auto"></svg>
       ${Object.keys(botCount).length?('<p class="note" style="margin-top:6px">Gargalos citados: '+Object.entries(botCount).sort((a,b)=>b[1]-a[1]).map(e=>e[0]+' ('+e[1]+')').join(' · ')+'</p>'):''}</div>
@@ -451,7 +451,7 @@ function renderDash(code,students){
   const fakeBars=fakeT.map(x=>bar(x.t,x.n/tt*100,x.n?'var(--warn)':'var(--ok)',x.n)).join('');
   html+=`<div class="grid2" style="margin-top:16px">
     <div class="panel"><h3>Conceitos que dizem conhecer</h3><div class="h-sub">${withTerms.length} responderam · termos reais — <span style="color:var(--warn)">■</span> menos conhecidos (lacunas)</div>${withTerms.length?realBars:'<p class="note">Sem dados de conceitos ainda.</p>'}</div>
-    <div class="panel"><h3>Termos que não existem</h3><div class="h-sub">conceitos inventados — quem marca, superestima o próprio domínio</div>${withTerms.length?(fakeBars+`<div class="miniflag ${fakeClaims?'warn':'ok'}">${fakeClaims?(fakeClaims+' marcação(ões) em termos inexistentes — ótimo gancho de conversa.'):'Ninguém marcou os termos inventados.'}</div>`):'<p class="note">Sem dados de conceitos ainda.</p>'}</div>
+    <div class="panel"><h3>Termos que não existem</h3><div class="h-sub">conceitos inventados — quem marca, superestima o próprio domínio</div>${withTerms.length?(fakeBars+((!forClass)?`<div class="miniflag ${fakeClaims?'warn':'ok'}">${fakeClaims?(fakeClaims+' marcação(ões) em termos inexistentes — ótimo gancho de conversa.'):'Ninguém marcou os termos inventados.'}</div>`:'')):'<p class="note">Sem dados de conceitos ainda.</p>'}</div>
   </div>`;
 
   /* ---- tabela (só para você) ---- */
