@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano de Ação Individual · Líder Aumentado por IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,600;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBFAF6;--ink:#15130F;--ink-soft:#46423A;--muted:#8A8479;
+    --red:#D81F11;--line:#D8D2C6;--line-soft:#E8E3D8;--header:#ECE7DB;--field:#FFFFFF;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#EDEAE2;color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .serif{font-family:'Playfair Display',Georgia,serif}
+  /* toolbar */
+  .toolbar{position:sticky;top:0;z-index:30;background:#15130F;color:#F1EEE6;padding:10px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .toolbar .brand{font-family:'Playfair Display';font-weight:800;font-size:15px;letter-spacing:.01em}
+  .toolbar .brand i{color:var(--red);font-style:italic}
+  .toolbar .grow{flex:1}
+  .toolbar input{font-family:'Inter';font-size:13px;padding:7px 11px;border:1px solid #3a372f;border-radius:8px;background:#211e18;color:#F1EEE6}
+  .tbtn{font-family:'Inter';font-weight:600;font-size:12.5px;border:1px solid #3a372f;background:#211e18;color:#F1EEE6;padding:8px 13px;border-radius:8px;cursor:pointer;transition:.12s}
+  .tbtn:hover{border-color:#F1EEE6}
+  .tbtn.red{background:var(--red);border-color:var(--red);color:#fff}
+  .saved{font-size:11.5px;color:#9a958a;font-family:'Inter'}
+  /* sheet */
+  .sheet{max-width:1180px;margin:22px auto;background:var(--paper);border-top:4px solid var(--ink);box-shadow:0 14px 50px rgba(0,0,0,.14);padding:40px 46px 54px}
+  .eyebrow{font-family:'Inter';font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  h1.title{font-family:'Playfair Display';font-weight:800;font-size:38px;line-height:1.12;margin:0 0 6px;letter-spacing:-.01em}
+  h1.title i{color:var(--red);font-style:italic}
+  .sub{font-size:15px;color:var(--ink-soft);max-width:70ch;margin:0 0 4px}
+  .sub i{font-family:'Playfair Display';font-style:italic}
+  .metaline{display:flex;gap:30px;margin:18px 0 8px;flex-wrap:wrap}
+  .metaline .m{flex:1;min-width:200px;border-bottom:1.5px solid var(--ink)}
+  .metaline .m label{display:block;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  .metaline .m input{border:none;background:none;font-family:'Playfair Display';font-size:18px;color:var(--ink);width:100%;padding:2px 0 6px;outline:none}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:26px}
+  .colhead{font-family:'Playfair Display';font-weight:700;font-size:18px;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:16px}
+  .colhead .k{color:var(--red);font-style:italic;font-weight:700;margin-right:8px}
+  .colhead i{font-style:italic;color:var(--red)}
+  .field{border:1px solid var(--ink);margin-bottom:16px;background:var(--field)}
+  .flabel{background:var(--header);font-family:'Inter';font-weight:700;font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink);padding:9px 13px;border-bottom:1px solid var(--ink)}
+  .field textarea{display:block;width:100%;border:none;background:
+    repeating-linear-gradient(transparent,transparent 27px,var(--line-soft) 27px,var(--line-soft) 28px);
+    background-attachment:local;font-family:'Inter';font-size:14px;line-height:28px;color:var(--ink);
+    padding:6px 13px 4px;resize:none;outline:none;min-height:84px;overflow:hidden}
+  .field textarea::placeholder{color:#bdb7aa;font-style:italic}
+  .footnote{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .footnote .serif{font-style:italic}
+  @media (max-width:820px){.cols{grid-template-columns:1fr;gap:18px}.sheet{padding:26px 20px 36px}h1.title{font-size:28px}}
+  /* PRINT */
+  @media print{
+    @page{size:A4 landscape;margin:10mm}
+    body{background:#fff}
+    .toolbar{display:none!important}
+    .sheet{box-shadow:none;margin:0;max-width:none;border-top:3px solid var(--ink);padding:6mm 4mm}
+    .field,.flabel,.metaline .m{break-inside:avoid}
+    .field textarea{overflow:visible}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <span class="brand">Plano de ação <i>individual</i></span>
+  <span class="grow"></span>
+  <span class="saved" id="saved">salvo</span>
+  <button class="tbtn" id="exportBtn">Exportar</button>
+  <button class="tbtn" id="importBtn">Importar</button>
+  <input type="file" id="importFile" accept="application/json" style="display:none">
+  <button class="tbtn" id="clearBtn">Limpar</button>
+  <button class="tbtn red" id="printBtn">Imprimir / Salvar PDF</button>
+</div>
+
+<div class="sheet">
+  <div class="eyebrow">Líder aumentado por IA · como quero evoluir</div>
+  <h1 class="title serif">Plano de ação <i>individual</i> — uma ação que <i>EU</i> posso pôr em prática.</h1>
+  <p class="sub">Uma ação concreta, escolhida por você, que cabe na sua rotina. <i>O plano vale pelo que você faz com ele depois — não pela intenção.</i></p>
+
+  <div class="metaline">
+    <div class="m"><label>Nome</label><input type="text" id="f_nome" placeholder="seu nome"></div>
+    <div class="m"><label>Área / time</label><input type="text" id="f_area" placeholder="onde você atua"></div>
+    <div class="m"><label>Data</label><input type="text" id="f_data" placeholder="dd/mm/aaaa"></div>
+  </div>
+
+  <div class="cols">
+    <!-- A -->
+    <div class="col">
+      <div class="colhead serif"><span class="k">A</span>O <i>quê</i> · o plano</div>
+      <div class="field"><div class="flabel">Objetivo(s)</div><textarea data-f="obj" placeholder="O que você quer alcançar como líder aumentado por IA."></textarea></div>
+      <div class="field"><div class="flabel">Benefícios esperados</div><textarea data-f="ben" placeholder="O que melhora — para você, seu time, sua área — se isto der certo."></textarea></div>
+      <div class="field"><div class="flabel">Descrição das ações</div><textarea data-f="acoes" placeholder="O que você vai fazer, em termos concretos."></textarea></div>
+      <div class="field"><div class="flabel">Primeira ação · curto prazo</div><textarea data-f="primeira" placeholder="O primeiro passo, pequeno e datado, que você dá nos próximos dias."></textarea></div>
+    </div>
+    <!-- B -->
+    <div class="col">
+      <div class="colhead serif"><span class="k">B</span>O <i>como</i> · execução e apoio</div>
+      <div class="field"><div class="flabel">Acompanhamento do plano: ações/resultados e periodicidade</div><textarea data-f="acomp" placeholder="Como e com que frequência você vai revisar o progresso."></textarea></div>
+      <div class="field"><div class="flabel">Dificuldades esperadas</div><textarea data-f="dific" placeholder="O que pode atrapalhar — hábitos, tempo, resistência, técnica."></textarea></div>
+      <div class="field"><div class="flabel">Consequências</div><textarea data-f="conseq" placeholder="O que acontece se você seguir — e se não seguir — com o plano."></textarea></div>
+      <div class="field"><div class="flabel">Quem e como pode me ajudar</div><textarea data-f="ajuda" placeholder="Pessoas, recursos ou parcerias que destravam o caminho."></textarea></div>
+      <div class="field"><div class="flabel">Do que mais estou precisando para pôr tudo em prática</div><textarea data-f="precisa" placeholder="A peça que ainda falta para começar de verdade."></textarea></div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <span class="serif">“Delegar a tarefa não delega a responsabilidade.”</span>
+    <span>Líder aumentado por IA · plano de ação individual</span>
+  </div>
+</div>
+
+<script>
+const LS='fact_plano_individual_v1';
+const fields=[...document.querySelectorAll('[data-f]')];
+const metas={nome:'f_nome',area:'f_area',data:'f_data'};
+function grow(t){t.style.height='auto';t.style.height=Math.max(84,t.scrollHeight)+'px';}
+function collect(){const d={metas:{},fields:{}};
+  for(const k in metas)d.metas[k]=document.getElementById(metas[k]).value;
+  fields.forEach(t=>d.fields[t.dataset.f]=t.value);return d;}
+let t=null;
+function save(){clearTimeout(t);t=setTimeout(()=>{try{localStorage.setItem(LS,JSON.stringify(collect()));
+  const s=document.getElementById('saved');s.textContent='salvo ✓';setTimeout(()=>s.textContent='salvo',1200);}catch(e){document.getElementById('saved').textContent='não foi possível salvar';}},250);}
+function load(){let d;try{d=JSON.parse(localStorage.getItem(LS));}catch(e){}if(!d)return;
+  if(d.metas)for(const k in metas)if(d.metas[k]!=null)document.getElementById(metas[k]).value=d.metas[k];
+  if(d.fields)fields.forEach(t=>{if(d.fields[t.dataset.f]!=null)t.value=d.fields[t.dataset.f];});
+  fields.forEach(grow);}
+fields.forEach(t=>t.addEventListener('input',()=>{grow(t);save();}));
+Object.values(metas).forEach(id=>document.getElementById(id).addEventListener('input',save));
+document.getElementById('printBtn').addEventListener('click',()=>{fields.forEach(grow);window.print();});
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  if(!confirm('Apagar tudo o que você preencheu neste plano?'))return;
+  fields.forEach(t=>{t.value='';grow(t);});Object.values(metas).forEach(id=>document.getElementById(id).value='');save();});
+document.getElementById('exportBtn').addEventListener('click',()=>{
+  const blob=new Blob([JSON.stringify(collect(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='plano-acao-individual.json';a.click();URL.revokeObjectURL(a.href);});
+document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);
+    if(d.metas)for(const k in metas)document.getElementById(metas[k]).value=d.metas[k]||'';
+    if(d.fields)fields.forEach(t=>t.value=d.fields[t.dataset.f]||'');fields.forEach(grow);save();}catch(err){alert('Arquivo inválido.');}};r.readAsText(f);});
+load();
+</script>
+</body>
+</html>
