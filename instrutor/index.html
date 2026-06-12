@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel do Instrutor · Líder Aumentado por IA · WEG</title>
+<title>Painel do Instrutor · Líder Aumentado por IA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -107,7 +107,7 @@
 <div id="gate-lock">
   <div class="gate-box">
     <div class="gate-mark"></div>
-    <div class="gate-eyebrow">WEG · acesso restrito</div>
+    <div class="gate-eyebrow">acesso restrito</div>
     <h1 class="gate-title">Painel do Instrutor</h1>
     <p class="gate-lede">Área restrita a instrutores. Digite a senha para continuar.</p>
     <input type="password" id="gatePw" placeholder="Senha" autocomplete="off" autofocus>
@@ -120,8 +120,8 @@
 (function(){
   /* Gate por hash SHA-256 (salgado). A senha em texto NÃO fica no HTML — só o hash,
      que é via de mão única. Requer contexto seguro (https / localhost). */
-  const SALT="wegLiderAumentadoIA::v1::";
-  const HASH="6b8a558a8106e264376577b84a9e21e687e202af1af70bdb872b56c1535add34";
+  const SALT="factLiderAumentadoIA::v1::";
+  const HASH="a843afdb76c414191b3ee47f1c1db46cbe9b38737fafed63f047f69fc75a5974";
   const SKEY="fact_instrutor_unlocked";
   const lock=document.getElementById('gate-lock');
   function unlock(){lock.classList.add('hidden');document.body.classList.remove('locked');}
@@ -148,7 +148,7 @@
 <header>
   <div class="wrap hbar">
     <div class="mark"></div>
-    <div><b>FACTFULNESS</b><div class="sub">Painel do Instrutor · Líder Aumentado · WEG</div></div>
+    <div><b>FACTFULNESS</b><div class="sub">Painel do Instrutor · Líder Aumentado</div></div>
     <div class="tabs"><button class="tab active" data-tab="admin">Turmas</button><button class="tab" data-tab="dash">Painel</button></div>
   </div>
 </header>
@@ -162,7 +162,7 @@
   <div id="cfgWarn"></div>
   <div class="card">
     <div class="row">
-      <input type="text" id="turmaNome" placeholder="Nome da turma (ex.: WEG Gerência Jan/26)" style="flex:1;min-width:220px">
+      <input type="text" id="turmaNome" placeholder="Nome da turma (ex.: Gerência Jan/26)" style="flex:1;min-width:220px">
       <button class="btn primary" id="genCode">Gerar código</button>
     </div>
     <div class="codebig" id="codeDisplay">— — — —</div>
@@ -238,7 +238,7 @@ if(!configured())document.getElementById('cfgWarn').innerHTML='<div class="confi
 
 /* ============ ADMIN ============ */
 let currentCode='';
-function makeCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=c[Math.floor(Math.random()*c.length)];return 'WEG-'+s;}
+function makeCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=c[Math.floor(Math.random()*c.length)];return 'FACT-'+s;}
 document.getElementById('genCode').addEventListener('click',()=>{
   currentCode=makeCode();document.getElementById('codeDisplay').textContent=currentCode;
   document.getElementById('copyCode').disabled=false;document.getElementById('registerCode').disabled=!configured();

@@ -1,6 +1,6 @@
-# Diagnóstico do Líder Aumentado por IA · WEG
+# Diagnóstico do Líder Aumentado por IA
 
-Ferramenta web (HTML estático) do programa **Factfulness / Líder Aumentado por IA** da WEG.
+Ferramenta web (HTML estático) do programa **Factfulness / Líder Aumentado por IA**.
 
 ## Estrutura
 

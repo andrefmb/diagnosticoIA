@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Diagnóstico do Líder Aumentado · WEG</title>
+<title>Diagnóstico do Líder Aumentado</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -119,7 +119,7 @@
 <header>
   <div class="wrap hbar">
     <div class="mark" id="homeMark"></div>
-    <div><b>FACTFULNESS</b><div class="sub">Diagnóstico do Líder Aumentado por IA · WEG</div></div>
+    <div><b>FACTFULNESS</b><div class="sub">Diagnóstico do Líder Aumentado por IA</div></div>
     <div class="sync" id="syncChip"><span class="dot"></span><span id="syncTxt">—</span></div>
   </div>
   <div class="progress"><div class="fill" id="pfill"></div></div>
@@ -128,7 +128,7 @@
 
 <!-- GATE -->
 <section class="view active" id="gate">
-  <div class="eyebrow">WEG · acesso</div>
+  <div class="eyebrow">acesso</div>
   <h1 class="title">Bem-vindo(a) ao seu diagnóstico</h1>
   <p class="lede">Você vai construir seu retrato de líder aumentado ao longo do programa, na ordem que o instrutor indicar. Tudo fica salvo neste navegador — pode fechar e voltar quando quiser.</p>
   <div class="card">
@@ -240,7 +240,7 @@ async function ensureSchema(){
 }
 
 /* ============ ESTADO + PERSISTÊNCIA ============ */
-const LS_KEY='fact_aluno_weg_v1';
+const LS_KEY='fact_aluno_v1';
 let S=loadState();
 function loadState(){try{const r=localStorage.getItem(LS_KEY);if(r)return JSON.parse(r);}catch(e){}
   return {id:uuid(),nome:'',turma:'',mat:null,matRaw:null,atit:null,equipe:null,org:null,syncedAt:null};}
@@ -406,8 +406,12 @@ function computeMat(silent){
 }
 function renderMatResult(){
   const R=S.mat,st=STAGES[R.stage];
+  const onDark=R.stage>=3;                                  // estágios mais altos têm fundo escuro → texto branco
+  const txt=onDark?'#fff':'var(--ink)';
+  const rungOn=onDark?'#fff':'var(--ink)';
+  const rungOff=onDark?'rgba(255,255,255,.28)':'rgba(20,25,30,.16)';
   const html=`<div class="res-head">
-    <div class="stage-card" id="msStageCard"><div class="lab">Seu estágio</div><div class="n">${st.n}</div><div class="of">estágio ${R.stage+1} de 5 · índice ${R.overall}/100</div><p>${st.d}</p><div class="ladder">${STAGES.map((_,i)=>`<div class="rung ${i<=R.stage?'on':''}"></div>`).join('')}</div></div>
+    <div class="stage-card" id="msStageCard" style="background:${st.c};color:${txt}"><div class="lab">Seu estágio</div><div class="n">${st.n}</div><div class="of">estágio ${R.stage+1} de 5 · índice ${R.overall}/100</div><p>${st.d}</p><div class="ladder">${STAGES.map((_,i)=>`<div class="rung" style="background:${i<=R.stage?rungOn:rungOff}"></div>`).join('')}</div></div>
     <div class="card radar-card"><svg id="msRadar" viewBox="0 0 280 260" width="100%" style="max-width:300px"></svg></div></div>
     <div class="section-lab">Mapa de competências</div><div class="card" style="overflow-x:auto"><table class="cmap" id="msCmap"></table></div>
     <div class="section-lab">Calibração — o que você acha × demonstra</div><div class="card">
