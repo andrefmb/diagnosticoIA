@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico do Líder Aumentado · WEG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#F6F5F1;--surface:#FFFFFF;--ink:#16191E;--ink-soft:#3C434C;--muted:#737B85;
+    --line:#E4E1D9;--line-strong:#CFCABE;--humano:#C0612A;--humano-soft:#F3E4D6;--ia:#1B6E87;--ia-soft:#DCEAEE;
+    --equipe:#6B4E8C;--equipe-soft:#E7DEF0;--org:#3F6B4A;--org-soft:#E2EDE4;
+    --ok:#3F6B4A;--ok-soft:#E2EDE4;--warn:#9A3324;--warn-soft:#F6E3DE;
+    --s1:#C9C6BD;--s2:#9FB6A4;--s3:#5E96A0;--s4:#2D7388;--s5:#16465A;
+    --radius:14px;--shadow:0 1px 2px rgba(20,25,30,.05),0 10px 30px rgba(20,25,30,.07)}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{font-family:'Archivo',sans-serif;letter-spacing:-.01em}.mono{font-family:'IBM Plex Mono',monospace}
+  .wrap{max-width:880px;margin:0 auto;padding:0 22px}
+  header{border-bottom:1px solid var(--line);background:rgba(246,245,241,.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20}
+  .hbar{display:flex;align-items:center;gap:12px;padding:12px 0}
+  .mark{width:30px;height:30px;border-radius:7px;flex:none;background:linear-gradient(135deg,var(--humano) 0 50%,var(--ia) 50% 100%);position:relative;cursor:pointer}
+  .mark::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,var(--paper) 0 26%,transparent 27%)}
+  .hbar b{font-family:'Archivo';font-weight:800;font-size:14px}.hbar .sub{font-size:10px;color:var(--muted);letter-spacing:.13em;text-transform:uppercase}
+  .sync{margin-left:auto;font-family:'IBM Plex Mono';font-size:11px;display:flex;align-items:center;gap:7px;color:var(--muted)}
+  .sync .dot{width:8px;height:8px;border-radius:50%;background:var(--line-strong)}
+  .sync.local .dot{background:var(--humano)}.sync.cloud .dot{background:var(--ok)}.sync.fail .dot{background:var(--warn)}
+  .view{display:none;padding:30px 0 80px;animation:fade .3s}.view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+  .eyebrow{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+  h1.title{font-size:30px;font-weight:800;line-height:1.12;margin:0 0 8px}
+  .lede{font-size:16.5px;color:var(--ink-soft);max-width:62ch;margin:0 0 6px}
+  p{max-width:68ch}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);margin:16px 0}
+  input[type=text]{font-family:'Inter';font-size:15px;padding:11px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink);width:100%}
+  label.fld{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px;font-weight:500}
+  .btn{font-family:'Archivo';font-weight:700;font-size:15px;border:none;border-radius:11px;padding:12px 22px;cursor:pointer;transition:.15s}
+  .btn.primary{background:var(--ink);color:#fff}.btn.primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 20px rgba(20,25,30,.2)}
+  .btn.primary:disabled{opacity:.4;cursor:not-allowed}.btn.ghost{background:none;border:1px solid var(--line-strong);color:var(--ink-soft)}
+  .nav-row{display:flex;gap:12px;margin-top:24px;align-items:center;flex-wrap:wrap}.nav-note{font-size:12.5px;color:var(--muted);margin-left:auto}
+  /* hub */
+  .lenses{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0}
+  .lens{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);cursor:pointer;transition:.15s;border-top:4px solid var(--line)}
+  .lens:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(20,25,30,.1)}
+  .lens.indiv{border-top-color:var(--humano)}.lens.atit{border-top-color:var(--ia)}.lens.equipe{border-top-color:var(--equipe)}.lens.org{border-top-color:var(--org)}
+  .lens .tag{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .lens h3{margin:5px 0 4px;font-size:17px}.lens p{font-size:13px;color:var(--ink-soft);margin:0;max-width:none}
+  .lens .status{margin-top:11px;font-family:'IBM Plex Mono';font-size:11px;display:flex;align-items:center;gap:7px}
+  .lens .status .pin{width:8px;height:8px;border-radius:50%;background:var(--line-strong)}
+  .lens.done .status .pin{background:var(--ok)}.lens.done .status .txt{color:var(--ok)}.lens .status .txt{color:var(--muted)}
+  .progress{height:3px;background:var(--line)}.progress .fill{height:100%;background:linear-gradient(90deg,var(--humano),var(--ia));width:0;transition:width .4s}
+  /* questions */
+  .qitem{padding:14px 0;border-bottom:1px solid var(--line)}.qitem:last-child{border-bottom:none}
+  .qnum{font-family:'IBM Plex Mono';font-size:11px;color:var(--muted)}
+  .qtext{font-size:15px;margin:3px 0 10px}
+  .scale{display:flex;gap:7px}.scale label{flex:1;text-align:center;cursor:pointer;position:relative}
+  .scale input{position:absolute;opacity:0}.scale .box{display:block;border:1px solid var(--line-strong);border-radius:8px;padding:8px 0;font-family:'IBM Plex Mono';font-size:13px;color:var(--ink-soft);transition:.12s}
+  .scale label:hover .box{border-color:var(--ink)}.scale input:checked+.box{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .scale-key{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:0 2px 12px}
+  .opts{display:flex;flex-direction:column;gap:9px}
+  .opt{display:block;cursor:pointer;border:1px solid var(--line-strong);border-radius:10px;padding:11px 14px;font-size:14px;color:var(--ink-soft);transition:.12s;position:relative}
+  .opt input{position:absolute;opacity:0}.opt:hover{border-color:var(--ink)}.opt.sel{border-color:var(--ia);background:var(--ia-soft);color:var(--ink)}
+  .terms{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .term{cursor:pointer;border:1px solid var(--line-strong);border-radius:10px;padding:11px 12px;text-align:center;font-size:13px;font-weight:500;transition:.12s;user-select:none}
+  .term:hover{border-color:var(--ink)}.term.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  /* results */
+  .section-lab{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:28px 0 10px;display:flex;align-items:center;gap:10px}.section-lab::after{content:"";flex:1;height:1px;background:var(--line)}
+  .res-head{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;align-items:stretch}
+  .stage-card{border-radius:16px;padding:22px;color:#fff;position:relative;overflow:hidden}
+  .stage-card .lab{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.13em;text-transform:uppercase;opacity:.8}
+  .stage-card .n{font-family:'Archivo';font-weight:800;font-size:34px;line-height:1.05;margin:7px 0 2px}
+  .stage-card .of{font-family:'IBM Plex Mono';font-size:12px;opacity:.7}.stage-card p{font-size:13px;opacity:.92;margin:9px 0 0;max-width:none}
+  .ladder{display:flex;gap:5px;margin-top:14px}.ladder .rung{flex:1;height:7px;border-radius:4px;background:rgba(255,255,255,.25)}.ladder .rung.on{background:#fff}
+  .radar-card{display:flex;align-items:center;justify-content:center}
+  .cmap{width:100%;border-collapse:collapse;font-size:12.5px}
+  .cmap th{font-family:'IBM Plex Mono';font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:7px 3px;text-align:center;font-weight:500}
+  .cmap td.dim{text-align:left;font-weight:600;font-size:12.5px;padding:5px 8px 5px 0;color:var(--ink)}
+  .cell{height:28px;border-radius:6px;background:#F0EEE8;border:1px solid var(--line);position:relative}.cell.on{border:2px solid var(--ink)}
+  .cell .you{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono';font-size:9px;font-weight:600;color:#fff}
+  .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:center}
+  .quad-read .badge{display:inline-block;font-family:'Archivo';font-weight:800;font-size:18px;padding:7px 14px;border-radius:11px;margin-bottom:8px;background:var(--ink);color:#fff}
+  .quad-read p{font-size:14px;margin:0;max-width:none}
+  .barline{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}.barline .nm{width:160px;color:var(--ink-soft)}
+  .barline .track{flex:1;height:9px;background:#EDEBE4;border-radius:6px;overflow:hidden}.barline .f{height:100%;border-radius:6px}.barline .v{font-family:'IBM Plex Mono';font-size:12px;width:34px;text-align:right}
+  .flag{border-radius:10px;padding:12px 15px;font-size:13.5px;margin-top:12px}.flag.warn{background:var(--warn-soft);color:#6a2418;border:1px solid #e6c4bc}.flag.ok{background:var(--ok-soft);color:#2c4d34;border:1px solid #bcdac2}
+  .readout{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ia);border-radius:14px;padding:22px 24px;margin-top:18px;box-shadow:var(--shadow)}
+  .readout h3{color:var(--ink);margin:0 0 8px}.readout p{color:var(--ink-soft);font-size:14.5px;max-width:none;margin:8px 0}.readout .lead{font-family:'Archivo';font-weight:700;color:var(--ink)}
+  .synth-empty{color:var(--muted);font-size:14px}
+  .note{font-size:12.5px;color:var(--muted)}
+  .config-warn{background:var(--warn-soft);border:1px solid #e6c4bc;color:#6a2418;border-radius:10px;padding:10px 14px;font-size:12.5px;margin:10px 0}
+  @media (max-width:720px){.lenses,.res-head,.result-grid{grid-template-columns:1fr}.terms{grid-template-columns:1fr 1fr}.barline .nm{width:130px}}
+  @media (max-width:560px){
+    .wrap{padding:0 16px}
+    .view{padding:22px 0 64px}
+    h1.title{font-size:24px}
+    .lede{font-size:15px}
+    p,.opt,.qtext{font-size:14px}
+    .card{padding:16px 16px}
+    .hbar{gap:9px;padding:11px 0}
+    .hbar b{font-size:13px}.hbar .sub{font-size:9px;letter-spacing:.07em}
+    .hbar>div:nth-child(2){min-width:0}
+    .sync{font-size:10px;gap:5px}
+    .scale{gap:5px}.scale .box{padding:10px 0;font-size:13px}
+    .scale label{flex:1 1 0;min-width:0}
+    .terms{grid-template-columns:1fr 1fr}
+    .barline .nm{width:108px;font-size:12px}
+    .stage-card .n{font-size:28px}
+    .readout{padding:18px 16px}
+    .nav-row{flex-direction:column;align-items:stretch;gap:10px}
+    .nav-row .btn{width:100%}
+    .nav-row .nav-note{margin-left:0;text-align:center}
+  }
+  @media (max-width:380px){.terms{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap hbar">
+    <div class="mark" id="homeMark"></div>
+    <div><b>FACTFULNESS</b><div class="sub">Diagnóstico do Líder Aumentado por IA · WEG</div></div>
+    <div class="sync" id="syncChip"><span class="dot"></span><span id="syncTxt">—</span></div>
+  </div>
+  <div class="progress"><div class="fill" id="pfill"></div></div>
+</header>
+<div class="wrap">
+
+<!-- GATE -->
+<section class="view active" id="gate">
+  <div class="eyebrow">WEG · acesso</div>
+  <h1 class="title">Bem-vindo(a) ao seu diagnóstico</h1>
+  <p class="lede">Você vai construir seu retrato de líder aumentado ao longo do programa, na ordem que o instrutor indicar. Tudo fica salvo neste navegador — pode fechar e voltar quando quiser.</p>
+  <div class="card">
+    <label class="fld">Seu nome</label>
+    <input type="text" id="inNome" placeholder="Como você quer aparecer para o instrutor">
+    <label class="fld">Código da turma</label>
+    <input type="text" id="inTurma" placeholder="O código que o instrutor liberou na tela">
+    <div id="cfgWarn"></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn primary" id="enter" disabled>Entrar</button>
+    <span class="nav-note">seus dados ficam neste navegador</span>
+  </div>
+</section>
+
+<!-- HUB -->
+<section class="view" id="hub">
+  <div class="eyebrow" id="hubGreet">olá</div>
+  <h1 class="title">Suas quatro lentes</h1>
+  <p class="lede">Cada lente mede uma coisa diferente. Faça na ordem que o instrutor pedir — o que você terminar fica marcado, e a síntese cruza tudo no final.</p>
+  <div class="lenses">
+    <div class="lens indiv" data-open="v-mat"><div class="tag">Você · capacidade</div><h3>Maturidade</h3><p>Literacia, julgamento e prática com IA. O diagnóstico mais fundo.</p><div class="status"><span class="pin"></span><span class="txt" id="st-mat">não feito</span></div></div>
+    <div class="lens atit" data-open="v-atit"><div class="tag">Você · atitude</div><h3>Atitude &amp; confiança</h3><p>Sua postura diante da IA e sua calibração de confiança.</p><div class="status"><span class="pin"></span><span class="txt" id="st-atit">não feito</span></div></div>
+    <div class="lens equipe" data-open="v-equipe"><div class="tag">Seu time</div><h3>Equipe aumentada</h3><p>Segurança psicológica e prontidão para trabalhar com IA.</p><div class="status"><span class="pin"></span><span class="txt" id="st-equipe">não feito</span></div></div>
+    <div class="lens org" data-open="v-org"><div class="tag">Sua área</div><h3>Prontidão da área</h3><p>Estratégia, dados, talento, governança e cultura.</p><div class="status"><span class="pin"></span><span class="txt" id="st-org">não feito</span></div></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn primary" data-open="v-synth">Ver minha síntese</button>
+    <button class="btn ghost" id="resync">Sincronizar agora</button>
+    <span class="nav-note" id="hubNote"></span>
+  </div>
+</section>
+
+<!-- MATURIDADE (wizard) -->
+<section class="view" id="v-mat">
+  <div class="eyebrow">Você · capacidade</div>
+  <h1 class="title" id="matTitle">Maturidade</h1>
+  <div id="matWizard"></div>
+</section>
+
+<!-- ATITUDE -->
+<section class="view" id="v-atit">
+  <div class="eyebrow">Você · atitude</div><h1 class="title">Atitude &amp; confiança</h1>
+  <p class="lede">O quanto cada frase descreve você. 1 = discordo · 5 = concordo.</p>
+  <div class="card"><div class="scale-key"><span>discordo</span><span>concordo</span></div><div id="atitBox"></div></div>
+  <div class="nav-row"><button class="btn ghost" data-open="hub">Voltar</button><button class="btn primary" id="atitDone" disabled>Ver resultado</button><span class="nav-note" id="atitNote">0</span></div>
+  <div id="atitRes"></div>
+</section>
+
+<!-- EQUIPE -->
+<section class="view" id="v-equipe">
+  <div class="eyebrow">Seu time</div><h1 class="title">Equipe aumentada</h1>
+  <p class="lede">Pensando no seu time hoje. 1 = discordo · 5 = concordo.</p>
+  <div class="card"><div class="scale-key"><span>discordo</span><span>concordo</span></div><div id="equipeBox"></div></div>
+  <div class="nav-row"><button class="btn ghost" data-open="hub">Voltar</button><button class="btn primary" id="equipeDone" disabled>Ver resultado</button><span class="nav-note" id="equipeNote">0</span></div>
+  <div id="equipeRes"></div>
+</section>
+
+<!-- ORG -->
+<section class="view" id="v-org">
+  <div class="eyebrow">Sua área</div><h1 class="title">Prontidão da área</h1>
+  <p class="lede">Sobre a sua área hoje. 1 = discordo · 5 = concordo.</p>
+  <div class="card"><div class="scale-key"><span>discordo</span><span>concordo</span></div><div id="orgBox"></div></div>
+  <div class="nav-row"><button class="btn ghost" data-open="hub">Voltar</button><button class="btn primary" id="orgDone" disabled>Ver resultado</button><span class="nav-note" id="orgNote">0</span></div>
+  <div id="orgRes"></div>
+</section>
+
+<!-- SÍNTESE -->
+<section class="view" id="v-synth">
+  <div class="eyebrow">Síntese</div><h1 class="title">Seu retrato do sistema</h1>
+  <p class="lede">Cada lente que você concluiu aparece aqui, e a leitura final cruza os planos.</p>
+  <div class="section-lab">Você · capacidade × atitude</div><div class="card" id="synIndiv"></div>
+  <div class="section-lab">Seu time</div><div class="card" id="synEquipe"></div>
+  <div class="section-lab">Sua área</div><div class="card" id="synOrg"></div>
+  <div class="readout" id="readout"></div>
+  <div class="nav-row"><button class="btn ghost" data-open="hub">Voltar ao hub</button></div>
+</section>
+
+</div>
+
+<script>
+/* ====================================================================
+   CONFIGURAÇÃO — preencha com os dados da sua base Turso.
+   Deixe vazio para rodar só localmente (sem envio ao instrutor).
+   ATENÇÃO: este token fica visível para o aluno. Use base dedicada.
+   ==================================================================== */
+/* credenciais mascaradas (base64 invertido) — mascaramento leve, não criptografia */
+const _dec = s => { try { return atob(s.split('').reverse().join('')); } catch(e){ return ''; } };
+const TURSO_URL   = _dec("=8Wau82cyVHduITL0NXYl1yc11yc3FmLi1mZlJHZuFWLzVGduVmcldWLnV2dv8iOsF3cilGb");
+const TURSO_TOKEN = _dec("3RkN3xGVVRUR5InblJ2Rz1SW2YXWtIHTYB1QKFkePVmMvl1V6NXTyQzTkFXZOdjVTR0cB9WVRB1c2s2ax4WNRBla4hWdxEEbldXcE9GaolETwQjRyQlLw4WSxU1VOVTSE10MjRlT00EVORXSU5EeFdFT6FkeNBDMTl1dZJTT0tGVahXTE9EeRRlTp9maJtGbtNWa3lWSrJ1VNlXSq1keJR1Tw0ERORXQql1aoRFT3l1VONDMT10dZpXW0VkeOpmSXpVNFRUTp9maJtGbtl0cNRlT3dmeOlXRE90MFp2TpFFWZBnSDxUaj52Yp9maJhmS5VmL5o0QWhFcrlkNJN0Y1IlbJNXSTFFVSVkWGpUaPl2YHJGaKlXZ");
+
+/* ============ TURSO (HTTP pipeline) ============ */
+function tursoConfigured(){return TURSO_URL.trim()!==""&&TURSO_TOKEN.trim()!=="";}
+async function tursoExec(statements){
+  const base=TURSO_URL.replace(/^libsql:\/\//,'https://').replace(/^wss:\/\//,'https://').replace(/\/+$/,'');
+  const requests=statements.map(s=>({type:'execute',stmt:{sql:s.sql,
+    args:(s.args||[]).map(v=>v===null?{type:'null'}:{type:'text',value:String(v)})}}));
+  requests.push({type:'close'});
+  const r=await fetch(base+'/v2/pipeline',{method:'POST',
+    headers:{'Authorization':'Bearer '+TURSO_TOKEN,'Content-Type':'application/json'},
+    body:JSON.stringify({requests})});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const data=await r.json();
+  (data.results||[]).forEach(res=>{if(res.type==='error')throw new Error(res.error&&res.error.message||'erro Turso');});
+  return data;
+}
+async function ensureSchema(){
+  await tursoExec([{sql:`CREATE TABLE IF NOT EXISTS respostas(id TEXT PRIMARY KEY,turma TEXT NOT NULL,nome TEXT,payload TEXT NOT NULL,atualizado_em TEXT)`}]);
+}
+
+/* ============ ESTADO + PERSISTÊNCIA ============ */
+const LS_KEY='fact_aluno_weg_v1';
+let S=loadState();
+function loadState(){try{const r=localStorage.getItem(LS_KEY);if(r)return JSON.parse(r);}catch(e){}
+  return {id:uuid(),nome:'',turma:'',mat:null,matRaw:null,atit:null,equipe:null,org:null,syncedAt:null};}
+function uuid(){return (crypto.randomUUID?crypto.randomUUID():'id-'+Date.now()+'-'+Math.random().toString(16).slice(2));}
+function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}
+  setSync('local','salvo neste navegador');}
+function setSync(kind,txt){const c=document.getElementById('syncChip');c.className='sync '+kind;document.getElementById('syncTxt').textContent=txt;}
+
+async function syncRemote(){
+  if(!tursoConfigured()){setSync('local','salvo só neste navegador');return;}
+  try{
+    await ensureSchema();
+    const payload=JSON.stringify({nome:S.nome,mat:S.mat,atit:S.atit,equipe:S.equipe,org:S.org});
+    const now=new Date().toISOString();
+    await tursoExec([{sql:`INSERT INTO respostas(id,turma,nome,payload,atualizado_em) VALUES(?,?,?,?,?)
+      ON CONFLICT(id) DO UPDATE SET turma=excluded.turma,nome=excluded.nome,payload=excluded.payload,atualizado_em=excluded.atualizado_em`,
+      args:[S.id,S.turma,S.nome,payload,now]}]);
+    S.syncedAt=now;save();setSync('cloud','enviado ao instrutor ✓');
+  }catch(e){setSync('fail','sem conexão com a base — salvo localmente');}
+}
+
+/* ============ NAV ============ */
+const views=[...document.querySelectorAll('.view')];
+function show(id){views.forEach(v=>v.classList.toggle('active',v.id===id));window.scrollTo(0,0);
+  const order=['gate','hub','v-mat','v-atit','v-equipe','v-org','v-synth'];
+  document.getElementById('pfill').style.width=(Math.max(0,order.indexOf(id))/(order.length-1)*100)+'%';
+  if(id==='v-mat'&&!matBuilt){matBuilt=true;buildMatWizard();}
+  if(id==='v-synth')renderSynth();}
+document.querySelectorAll('[data-open]').forEach(el=>el.addEventListener('click',()=>{
+  const t=el.dataset.open;show(t==='hub'?'hub':t);}));
+document.getElementById('homeMark').addEventListener('click',()=>{if(S.nome)show('hub');});
+document.getElementById('resync').addEventListener('click',syncRemote);
+
+/* ============ GATE ============ */
+const inNome=document.getElementById('inNome'),inTurma=document.getElementById('inTurma'),enterBtn=document.getElementById('enter');
+function gateCheck(){enterBtn.disabled=!(inNome.value.trim()&&inTurma.value.trim());}
+inNome.addEventListener('input',gateCheck);inTurma.addEventListener('input',gateCheck);
+if(!tursoConfigured())document.getElementById('cfgWarn').innerHTML='<div class="config-warn">Modo local: a base não está configurada neste arquivo, então as respostas ficam só neste navegador.</div>';
+enterBtn.addEventListener('click',()=>{S.nome=inNome.value.trim();S.turma=inTurma.value.trim();save();
+  document.getElementById('hubGreet').textContent='olá, '+S.nome.split(' ')[0]+' · turma '+S.turma;
+  updateHub();show('hub');});
+
+/* ============ DADOS DOS INSTRUMENTOS ============ */
+const DIMS=[{key:'ent',nm:'Entender IA',plane:'literacia',c:'var(--ia)'},{key:'usar',nm:'Usar & aplicar',plane:'literacia',c:'var(--ia)'},
+  {key:'disc',nm:'Discernir',plane:'literacia',c:'var(--ia)'},{key:'etic',nm:'Ética & responsabilidade',plane:'literacia',c:'var(--ia)'},
+  {key:'dec',nm:'Decisão aumentada',plane:'liderança',c:'var(--humano)'},{key:'orq',nm:'Orquestração do time híbrido',plane:'liderança',c:'var(--humano)'}];
+const SELF=[
+  {dim:'ent',rev:false,t:'Sei explicar, em termos simples, o que a IA generativa consegue e o que ela não consegue fazer.'},
+  {dim:'ent',rev:true,t:'Não tenho clareza de como a IA chega nas respostas que dá.'},
+  {dim:'usar',rev:false,t:'Uso IA com regularidade em tarefas reais do meu trabalho, não só por curiosidade.'},
+  {dim:'usar',rev:true,t:'Quando preciso de um bom resultado com IA, costumo depender de outra pessoa.'},
+  {dim:'disc',rev:false,t:'Reviso criticamente as saídas da IA antes de usá-las, checando o que pode estar errado.'},
+  {dim:'disc',rev:true,t:'Quando a resposta da IA parece bem escrita, tendo a confiar sem checar.'},
+  {dim:'etic',rev:false,t:'Tenho clareza sobre quais dados posso e não posso colocar numa ferramenta de IA.'},
+  {dim:'etic',rev:true,t:'Raramente penso nas implicações éticas ou de privacidade ao usar IA.'},
+  {dim:'dec',rev:false,t:'Integro recomendações de IA às decisões mantendo claro que a responsabilidade final é minha.'},
+  {dim:'dec',rev:true,t:'Se a IA recomenda algo com confiança, tenho dificuldade de decidir contra.'},
+  {dim:'orq',rev:false,t:'Sei distinguir o que delegar à IA do que exige uma pessoa, e desenho o trabalho do time pensando nisso.'},
+  {dim:'orq',rev:false,t:'Ajudo meu time a desenvolver as competências para trabalhar bem com IA.'}];
+const KNOW=[
+  {tag:'ent',q:'Quando uma IA generativa "alucina", isso significa que ela:',o:['Está com defeito e precisa ser reiniciada','Gerou uma informação que soa plausível, mas é falsa','Foi invadida por terceiros','Ficou sem conexão com a internet'],c:1},
+  {tag:'disc',q:'Para qual destas tarefas a saída de uma IA generativa é MENOS confiável sem verificação?',o:['Resumir um texto que você forneceu','Sugerir títulos para um e-mail','Citar dados estatísticos e fontes específicas','Reescrever um parágrafo em tom mais formal'],c:2},
+  {tag:'etic',q:'Você precisa analisar uma planilha com dados nominais de desempenho da equipe usando uma IA pública gratuita. O mais adequado é:',o:['Colar tudo — é mais rápido','Anonimizar os dados antes, ou usar uma ferramenta corporativa aprovada','Pedir à IA que prometa não guardar os dados','Não há problema: IA nunca guarda dados'],c:1},
+  {tag:'ent',q:'Uma IA recomenda sempre perfis parecidos para promoção. A explicação mais provável é:',o:['A IA tem preferências próprias','Ela aprendeu padrões de dados históricos, que podem carregar vieses','É um erro puramente aleatório','Falta de capacidade de processamento'],c:1},
+  {tag:'usar',q:'O que costuma melhorar MAIS a qualidade de uma resposta de IA?',o:['Escrever em letras maiúsculas','Dar contexto, exemplos e dizer o formato desejado','Repetir o mesmo pedido várias vezes','Usar o maior número possível de palavras'],c:1},
+  {tag:'disc',q:'Um colega diz: "a IA falou, então está certo". A postura mais madura é:',o:['Concordar — a IA erra menos que pessoas','Discordar sempre — IA não serve para decidir','Tratar como um insumo qualificado que exige verificação e julgamento','Depende do dia'],c:2}];
+const SJT=[
+  {dim:'dec',q:'Você decide entre dois fornecedores. A IA recomenda o Fornecedor A, com argumentos sólidos. Você:',o:[{t:'Sigo a recomendação — a análise foi convincente.',s:2},{t:'Ignoro: decisões assim são minhas, não da máquina.',s:2},{t:'Uso como ponto de partida, checo os pontos críticos e então decido.',s:4},{t:'Uso a análise e ainda peço à IA o argumento contrário antes de decidir.',s:5}]},
+  {dim:'orq',q:'Alguém do time admite que usou IA num relatório e errou porque não conferiu. Como líder, você:',o:[{t:'Repreendo a pessoa pelo erro.',s:1},{t:'Proíbo o uso de IA em relatórios.',s:2},{t:'Trato como aprendizado: revemos onde checar e criamos uma rotina de verificação.',s:4},{t:'Uso o caso para desenhar com o time quando e como usar IA com segurança — e valorizo a transparência.',s:5}]},
+  {dim:'disc',q:'A IA gera um ranking dos seus liderados por "potencial", a partir de métricas. Você:',o:[{t:'Não saberia avaliar se o ranking é confiável.',s:1},{t:'Adoto — é objetivo e tira o peso da minha mão.',s:2},{t:'Descarto: ranking de pessoas não se automatiza.',s:3},{t:'Questiono que métricas entraram e que vieses podem existir, e uso só como um insumo entre vários.',s:5}]}];
+const TERMS=[{t:'Alucinação',real:true},{t:'Prompt',real:true},{t:'Viés algorítmico',real:true},{t:'Janela de contexto',real:true},{t:'RAG (busca aumentada)',real:true},{t:'Ajuste fino (fine-tuning)',real:true},{t:'Destilação reversa de contexto',real:false},{t:'Ancoragem semântica adaptativa',real:false},{t:'Indexação cognitiva preditiva',real:false}];
+const STAGES=[
+  {n:'Espectador',c:'var(--s1)',d:'Você observa a IA de fora. Uso incidental ou nenhum — ponto de partida legítimo. O primeiro movimento é entrar no jogo com um uso pequeno e concreto.'},
+  {n:'Experimentador',c:'var(--s2)',d:'Você já usa, mas pontualmente e sem método. Resultados irregulares. O próximo passo é criar consistência e começar a checar criticamente.'},
+  {n:'Praticante',c:'var(--s3)',d:'Uso recorrente e com algum critério. Reconhece limites da ferramenta. Falta integrar a IA às decisões e ao time de forma deliberada.'},
+  {n:'Integrador',c:'var(--s4)',d:'Integra IA ao fluxo de decisão e à equipe, com governança e responsabilidade clara. O próximo degrau é orquestrar e desenvolver os outros.'},
+  {n:'Orquestrador',c:'var(--s5)',d:'Desenha o trabalho híbrido, mantém o julgamento humano no centro, antecipa e forma pessoas. Referência. O risco é virar gargalo único.'}];
+const NEXT={ent:'Reserve um tempo para entender, em linhas gerais, como a IA generativa produz respostas.',usar:'Escolha uma tarefa recorrente da semana e faça-a com IA por 30 dias, até virar fluência.',disc:'Crie o hábito de pedir o contraditório à IA e de checar fatos e fontes antes de usar.',etic:'Defina quais dados nunca entram numa ferramenta e onde está a linha vermelha.',dec:'Integre a IA como insumo, mas registre sempre o que aceitou, o que descartou e por quê.',orq:'Mapeie o trabalho do time entre humano, IA e híbrido, e defina quem responde por cada decisão assistida.'};
+const STRONG={ent:'Sua base de compreensão sustenta o resto.',usar:'A fluência prática te dá velocidade.',disc:'Seu senso crítico protege o time de decisões ruins assistidas por IA.',etic:'Sua clareza ética torna a adoção segura.',dec:'Você integra IA sem largar o leme.',orq:'Você já pensa o trabalho do time de forma híbrida.'};
+const ATIT=[{g:'pos',t:'Acredito que a IA vai melhorar a qualidade do meu trabalho.'},{g:'pos',t:'Vejo mais oportunidades do que ameaças na chegada da IA.'},{g:'pos',t:'Tenho curiosidade genuína de experimentar novas ferramentas de IA.'},{g:'pos',t:'Sinto que tenho controle sobre como a IA entra no meu trabalho.'},{g:'neg',t:'Sinto desconforto ou ansiedade ao usar ferramentas de IA.'},{g:'neg',t:'Tenho receio do impacto da IA sobre os empregos na minha área.'},{g:'neg',t:'Acho que a IA vai tirar das pessoas decisões que deveriam ser humanas.'},{g:'over',t:'Quando a IA recomenda algo com confiança, costumo seguir.'},{g:'over',t:'Quando a resposta da IA parece boa, checar me parece perda de tempo.'},{g:'under',t:'Prefiro confiar no meu julgamento a depender de uma recomendação de IA.'},{g:'under',t:'Desconfio, por princípio, de quase tudo que vem de uma IA.'}];
+const EQUIPE=[{g:'ps',rev:false,t:'No meu time, as pessoas conseguem admitir erros sem medo de punição.'},{g:'ps',rev:false,t:'É seguro assumir riscos e tentar coisas novas na minha equipe.'},{g:'ps',rev:false,t:'Quem levanta um problema difícil é ouvido, não silenciado.'},{g:'ps',rev:true,t:'No meu time, mostrar que não sabe algo pode ser usado contra você.'},{g:'hib',rev:false,t:'As pessoas do time falam abertamente sobre como (e se) usam IA.'},{g:'hib',rev:false,t:'Temos clareza sobre o que cada pessoa faz e o que a IA faz no trabalho.'},{g:'hib',rev:false,t:'Erros cometidos com apoio de IA viram aprendizado coletivo, não caça às bruxas.'},{g:'hib',rev:false,t:'Experimentamos novas formas de usar IA sem precisar pedir permissão para tudo.'}];
+const ORG=[{dom:'Estratégia',t:'Minha área tem clareza de onde a IA deve gerar valor e sabe priorizar onde investir.'},{dom:'Dados',t:'Temos dados acessíveis e organizados o suficiente para usar IA com proveito.'},{dom:'Talento',t:'As pessoas da minha área têm — ou estão desenvolvendo — competências de IA.'},{dom:'Governança',t:'Temos regras claras de uso responsável, privacidade e accountability de IA.'},{dom:'Cultura',t:'Na minha área, experimentar com IA é incentivado, seguro e apoiado pela liderança.'}];
+const ORG_STAGES=['Fundacional','Emergente','Operacional','Sistêmico','Transformacional'];
+
+/* ============ HELPERS ============ */
+const to100=v=>(v-1)/4*100;
+function likert(boxId,data,prefix,cb){const box=document.getElementById(boxId);
+  data.forEach((it,i)=>{const d=document.createElement('div');d.className='qitem';
+    let sc='<div class="scale">';for(let v=1;v<=5;v++)sc+=`<label><input type="radio" name="${prefix}${i}" value="${v}"><span class="box">${v}</span></label>`;sc+='</div>';
+    d.innerHTML=`<div class="qtext">${it.t}</div>${sc}`;box.appendChild(d);});
+  box.addEventListener('change',cb);}
+function val(n){const s=document.querySelector(`input[name="${n}"]:checked`);return s?+s.value:null;}
+function countAns(p,n){let c=0;for(let i=0;i<n;i++)if(val(p+i)!==null)c++;return c;}
+function scoreToStage(s){if(s<25)return 0;if(s<45)return 1;if(s<65)return 2;if(s<82)return 3;return 4;}
+function restore(prefix,arr,raw){if(!raw)return;arr.forEach((_,i)=>{if(raw[i]!=null){const el=document.querySelector(`input[name="${prefix}${i}"][value="${raw[i]}"]`);if(el)el.checked=true;}});}
+
+/* ============ MATURIDADE (wizard) ============ */
+let matStep=0, matBuilt=false;
+function buildMatWizard(){
+  const w=document.getElementById('matWizard');
+  w.innerHTML=`
+  <div id="ms0"><p class="lede">Quatro partes que se cruzam: como você se vê, o que sabe na prática, como julga situações reais e quais conceitos conhece. Não é prova — o valor é a calibração.</p>
+    <div class="nav-row"><button class="btn ghost" data-open="hub">Voltar</button><button class="btn primary" id="ms-go0">Começar</button></div></div>
+  <div id="ms1" style="display:none"><div class="section-lab">Parte 1 · como você se vê</div><div class="card"><div class="scale-key"><span>discordo</span><span>concordo</span></div><div id="selfBox"></div></div>
+    <div class="nav-row"><button class="btn ghost" id="ms-b1">Voltar</button><button class="btn primary" id="ms-go1" disabled>Avançar</button><span class="nav-note" id="ms-n1">0/12</span></div></div>
+  <div id="ms2" style="display:none"><div class="section-lab">Parte 2 · literacia (o que você sabe)</div><div id="knowBox"></div>
+    <div class="nav-row"><button class="btn ghost" id="ms-b2">Voltar</button><button class="btn primary" id="ms-go2" disabled>Avançar</button><span class="nav-note" id="ms-n2">0/6</span></div></div>
+  <div id="ms3" style="display:none"><div class="section-lab">Parte 3 · o que você faria</div><div id="sjtBox"></div>
+    <div class="nav-row"><button class="btn ghost" id="ms-b3">Voltar</button><button class="btn primary" id="ms-go3" disabled>Avançar</button><span class="nav-note" id="ms-n3">0/3</span></div></div>
+  <div id="ms4" style="display:none"><div class="section-lab">Parte 4 · conceitos que você conhece</div><div class="card"><div class="terms" id="termsBox"></div></div>
+    <div class="nav-row"><button class="btn ghost" id="ms-b4">Voltar</button><button class="btn primary" id="ms-go4">Ver meu resultado</button></div></div>
+  <div id="ms5" style="display:none"></div>`;
+  // build inputs
+  const sb=document.getElementById('selfBox');
+  SELF.forEach((it,i)=>{const d=document.createElement('div');d.className='qitem';let sc='<div class="scale">';for(let v=1;v<=5;v++)sc+=`<label><input type="radio" name="s${i}" value="${v}"><span class="box">${v}</span></label>`;sc+='</div>';d.innerHTML=`<div class="qnum">${i+1}/12</div><div class="qtext">${it.t}</div>${sc}`;sb.appendChild(d);});
+  const kb=document.getElementById('knowBox');KNOW.forEach((k,i)=>{const c=document.createElement('div');c.className='card';let o='<div class="opts">';k.o.forEach((x,j)=>o+=`<label class="opt"><input type="radio" name="k${i}" value="${j}">${x}</label>`);o+='</div>';c.innerHTML=`<div class="qnum">${i+1}/6</div><div class="qtext">${k.q}</div>${o}`;kb.appendChild(c);});
+  const jb=document.getElementById('sjtBox');SJT.forEach((s,i)=>{const c=document.createElement('div');c.className='card';let o='<div class="opts">';s.o.forEach((x,j)=>o+=`<label class="opt"><input type="radio" name="j${i}" value="${j}">${x.t}</label>`);o+='</div>';c.innerHTML=`<div class="qnum">cenário ${i+1}/3</div><div class="qtext">${s.q}</div>${o}`;jb.appendChild(c);});
+  const tb=document.getElementById('termsBox');TERMS.forEach((t,i)=>{const el=document.createElement('div');el.className='term';el.dataset.i=i;el.textContent=t.t;el.addEventListener('click',()=>{el.classList.toggle('on');saveMatRaw();});tb.appendChild(el);});
+  // restore raw
+  if(S.matRaw){restore('s',SELF,S.matRaw.self);restore('k',KNOW,S.matRaw.know);restore('j',SJT,S.matRaw.sjt);
+    (S.matRaw.terms||[]).forEach(i=>{const el=tb.querySelector(`[data-i="${i}"]`);if(el)el.classList.add('on');});}
+  // option highlight + gating
+  [kb,jb].forEach(box=>box.addEventListener('change',e=>{if(e.target.type==='radio')box.querySelectorAll(`input[name="${e.target.name}"]`).forEach(r=>r.closest('.opt').classList.toggle('sel',r.checked));matGates();saveMatRaw();}));
+  sb.addEventListener('change',()=>{matGates();saveMatRaw();});
+  // nav
+  const goStep=n=>{matStep=n;[0,1,2,3,4,5].forEach(k=>document.getElementById('ms'+k).style.display=k===n?'block':'none');window.scrollTo(0,0);};
+  document.getElementById('ms-go0').onclick=()=>goStep(1);
+  document.getElementById('ms-b1').onclick=()=>goStep(0);document.getElementById('ms-go1').onclick=()=>goStep(2);
+  document.getElementById('ms-b2').onclick=()=>goStep(1);document.getElementById('ms-go2').onclick=()=>goStep(3);
+  document.getElementById('ms-b3').onclick=()=>goStep(2);document.getElementById('ms-go3').onclick=()=>goStep(4);
+  document.getElementById('ms-b4').onclick=()=>goStep(3);document.getElementById('ms-go4').onclick=()=>{computeMat();goStep(5);};
+  matGates();
+  if(S.mat){computeMat(true);goStep(5);} // já feito: mostra resultado
+}
+function matGates(){const a1=countAns('s',12),a2=countAns('k',6),a3=countAns('j',3);
+  document.getElementById('ms-n1').textContent=a1+'/12';document.getElementById('ms-go1').disabled=a1<12;
+  document.getElementById('ms-n2').textContent=a2+'/6';document.getElementById('ms-go2').disabled=a2<6;
+  document.getElementById('ms-n3').textContent=a3+'/3';document.getElementById('ms-go3').disabled=a3<3;}
+function saveMatRaw(){const tb=document.getElementById('termsBox');
+  S.matRaw={self:SELF.map((_,i)=>val('s'+i)),know:KNOW.map((_,i)=>val('k'+i)),sjt:SJT.map((_,i)=>val('j'+i)),
+    terms:tb?[...tb.querySelectorAll('.term.on')].map(e=>+e.dataset.i):[]};save();}
+function computeMat(silent){
+  const tb=document.getElementById('termsBox');
+  let fakes=0,fakesTot=0;TERMS.forEach((t,i)=>{if(!t.real){fakesTot++;if(tb.querySelector(`[data-i="${i}"]`).classList.contains('on'))fakes++;}});
+  const overclaim=fakesTot?fakes/fakesTot:0;
+  const raw=SELF.map((_,i)=>val('s'+i));
+  const selfByDim={},cnt={};DIMS.forEach(d=>{selfByDim[d.key]=0;cnt[d.key]=0;});
+  SELF.forEach((it,i)=>{let v=raw[i];if(it.rev)v=6-v;selfByDim[it.dim]+=v;cnt[it.dim]++;});
+  DIMS.forEach(d=>selfByDim[d.key]=((selfByDim[d.key]/cnt[d.key])-1)/4*100);
+  let dev=0,pairs=0;['ent','usar','disc','etic','dec'].forEach(dk=>{const idx=SELF.map((it,i)=>it.dim===dk?i:-1).filter(x=>x>=0);
+    if(idx.length===2){const direct=SELF[idx[0]].rev?raw[idx[1]]:raw[idx[0]];const reverse=SELF[idx[0]].rev?raw[idx[0]]:raw[idx[1]];dev+=Math.abs(direct+reverse-6);pairs++;}});
+  const consistency=pairs?1-dev/(pairs*4):1;
+  let kc=0;KNOW.forEach((k,i)=>{if(val('k'+i)===k.c)kc++;});const knowScore=kc/KNOW.length*100;
+  const sjtByDim={};SJT.forEach((s,i)=>{sjtByDim[s.dim]=(s.o[val('j'+i)].s-1)/4*100;});
+  const sjtAvg=Object.values(sjtByDim).reduce((a,b)=>a+b,0)/Object.values(sjtByDim).length;
+  const demo={};demo.ent=knowScore;demo.usar=knowScore;demo.etic=knowScore;demo.disc=(knowScore+(sjtByDim.disc??knowScore))/2;demo.dec=sjtByDim.dec??sjtAvg;demo.orq=sjtByDim.orq??sjtAvg;
+  const dimScore={};DIMS.forEach(d=>{const perc=selfByDim[d.key]*(1-0.25*overclaim);dimScore[d.key]=Math.round(0.45*perc+0.55*demo[d.key]);});
+  const overall=Math.round(DIMS.reduce((a,d)=>a+dimScore[d.key],0)/DIMS.length);
+  const percOverall=DIMS.reduce((a,d)=>a+selfByDim[d.key],0)/DIMS.length;
+  const demoOverall=DIMS.reduce((a,d)=>a+demo[d.key],0)/DIMS.length;
+  S.mat={overall,stage:scoreToStage(overall),dimScore,overclaim:+overclaim.toFixed(2),consistency:+consistency.toFixed(2),percOverall:Math.round(percOverall),demoOverall:Math.round(demoOverall)};
+  save();updateHub();if(!silent)syncRemote();renderMatResult();
+}
+function renderMatResult(){
+  const R=S.mat,st=STAGES[R.stage];
+  const html=`<div class="res-head">
+    <div class="stage-card" id="msStageCard"><div class="lab">Seu estágio</div><div class="n">${st.n}</div><div class="of">estágio ${R.stage+1} de 5 · índice ${R.overall}/100</div><p>${st.d}</p><div class="ladder">${STAGES.map((_,i)=>`<div class="rung ${i<=R.stage?'on':''}"></div>`).join('')}</div></div>
+    <div class="card radar-card"><svg id="msRadar" viewBox="0 0 280 260" width="100%" style="max-width:300px"></svg></div></div>
+    <div class="section-lab">Mapa de competências</div><div class="card" style="overflow-x:auto"><table class="cmap" id="msCmap"></table></div>
+    <div class="section-lab">Calibração — o que você acha × demonstra</div><div class="card">
+      <div class="result-grid"><svg id="msCalib" viewBox="0 0 240 240" width="100%" style="max-width:260px;display:block;margin:0 auto"></svg>
+      <div class="quad-read"><div class="badge" id="msCalBadge">—</div><p id="msCalTxt"></p></div></div>
+      <div class="flag ${(R.overclaim>=0.67||R.consistency<0.65)?'warn':'ok'}" style="margin-top:14px">${(R.overclaim>=0.67||R.consistency<0.65)?'<b>Leia com cautela:</b> houve sinais de superestimativa ou inconsistência nas respostas.':'<b>Resposta consistente.</b> Sem sinais de inflação ou contradição.'}</div></div>
+    <div class="nav-row"><button class="btn ghost" data-open="hub">Voltar ao hub</button><button class="btn ghost" id="msRedo">Refazer</button></div>`;
+  document.getElementById('ms5').innerHTML=html;
+  document.querySelector('#ms5 [data-open]').addEventListener('click',()=>show('hub'));
+  document.getElementById('msRedo').addEventListener('click',()=>{S.mat=null;S.matRaw=null;save();document.getElementById('matWizard').innerHTML='';buildMatWizard();});
+  drawRadar('msRadar',R.dimScore);drawCmap('msCmap',R.dimScore);drawCalib('msCalib',R.percOverall,R.demoOverall);
+  const gap=R.percOverall-R.demoOverall,b=document.getElementById('msCalBadge'),tx=document.getElementById('msCalTxt');
+  if(gap>18){b.textContent='Superconfiança';b.style.background='var(--warn-soft)';b.style.color='var(--warn)';tx.textContent='Você se avalia acima do que demonstrou. É o ponto cego mais comum — diminua a distância entre confiança e prática.';}
+  else if(gap<-18){b.textContent='Subestimação';b.style.background='var(--ia-soft)';b.style.color='var(--ia)';tx.textContent='Você se sai melhor do que pensa. Confie mais no próprio julgamento.';}
+  else{b.textContent='Calibrado';b.style.background='var(--ok-soft)';b.style.color='var(--ok)';tx.textContent='Sua percepção bate com o que demonstra — boa autoconsciência.';}
+}
+function drawRadar(id,ds){const svg=document.getElementById(id),cx=140,cy=130,Rr=92,N=6,ang=i=>(-90+i*60)*Math.PI/180,pt=(i,r)=>[cx+r*Math.cos(ang(i)),cy+r*Math.sin(ang(i))];let s='';
+  for(let ring=1;ring<=4;ring++){let p=[];for(let i=0;i<N;i++){const[x,y]=pt(i,Rr*ring/4);p.push(x.toFixed(1)+','+y.toFixed(1));}s+=`<polygon points="${p.join(' ')}" fill="none" stroke="var(--line)"/>`;}
+  for(let i=0;i<N;i++){const[x,y]=pt(i,Rr);s+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line-strong)"/>`;const[lx,ly]=pt(i,Rr+18);s+=`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-family="IBM Plex Mono" font-size="9" font-weight="600" fill="${DIMS[i].c}" text-anchor="middle" dominant-baseline="middle">${DIMS[i].nm.split(' ')[0]}</text>`;}
+  let p=[];for(let i=0;i<N;i++){const[x,y]=pt(i,Rr*ds[DIMS[i].key]/100);p.push(x.toFixed(1)+','+y.toFixed(1));}
+  s+=`<polygon points="${p.join(' ')}" fill="rgba(27,110,135,.16)" stroke="var(--ia)" stroke-width="2"/>`;p.forEach(q=>{const[x,y]=q.split(',');s+=`<circle cx="${x}" cy="${y}" r="3.2" fill="var(--ia)"/>`;});svg.innerHTML=s;}
+function drawCmap(id,ds){const t=document.getElementById(id);let h='<thead><tr><th></th>'+STAGES.map((s,i)=>`<th>${i+1}<br>${s.n}</th>`).join('')+'</tr></thead><tbody>';
+  DIMS.forEach(d=>{const stg=scoreToStage(ds[d.key]);h+=`<tr><td class="dim">${d.nm}</td>`;for(let i=0;i<5;i++){const on=i===stg;h+=`<td><div class="cell ${on?'on':''}" style="${on?`background:${STAGES[i].c}`:''}">${on?'<span class="you">VOCÊ</span>':''}</div></td>`;}h+='</tr>';});t.innerHTML=h+'</tbody>';}
+function drawCalib(id,perc,demo){const svg=document.getElementById(id),m=22,sz=196,x0=m,y0=m;let s=`<rect x="${x0}" y="${y0}" width="${sz}" height="${sz}" fill="#FBFAF7" stroke="var(--line-strong)"/>`;
+  s+=`<line x1="${x0+sz/2}" y1="${y0}" x2="${x0+sz/2}" y2="${y0+sz}" stroke="var(--line)" stroke-dasharray="3 3"/><line x1="${x0}" y1="${y0+sz/2}" x2="${x0+sz}" y2="${y0+sz/2}" stroke="var(--line)" stroke-dasharray="3 3"/>`;
+  [['Subestima',.26,15],['Calibrado',.72,15],['Em construção',.26,sz-8],['Superconfiança',.72,sz-8]].forEach(l=>s+=`<text x="${x0+sz*l[1]}" y="${y0+l[2]}" font-family="Archivo" font-size="9" font-weight="700" fill="var(--muted)" text-anchor="middle">${l[0]}</text>`);
+  const px=x0+(perc/100)*sz,py=y0+sz-(demo/100)*sz;s+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="8" fill="var(--ink)"/>`;svg.innerHTML=s;}
+
+/* ============ ATITUDE ============ */
+likert('atitBox',ATIT,'a',()=>{const n=countAns('a',ATIT.length);document.getElementById('atitNote').textContent=n+'/'+ATIT.length;document.getElementById('atitDone').disabled=n<ATIT.length;saveAtitRaw();});
+function saveAtitRaw(){S.atitRaw=ATIT.map((_,i)=>val('a'+i));save();}
+document.getElementById('atitDone').addEventListener('click',()=>{computeAtit();syncRemote();});
+function computeAtit(silent){const by={pos:[],neg:[],over:[],under:[]};ATIT.forEach((it,i)=>by[it.g].push(val('a'+i)));
+  const m=a=>a.reduce((x,y)=>x+y,0)/a.length;const pos=m(by.pos),neg=m(by.neg),over=m(by.over),under=m(by.under);
+  S.atit={atitude:Math.round(((pos-neg)+4)/8*100),reliance:Math.round((over-under)/4*50+50)};save();updateHub();if(!silent)renderAtitResult();}
+function renderAtitResult(){const a=S.atit;let rb,rt;
+  if(a.reliance>=68){rb='Superconfiança';rt='Tende a se apoiar demais na IA — risco de viés de automação. Cheque mesmo quando a resposta parece boa.';}
+  else if(a.reliance<=32){rb='Subconfiança';rt='Resiste a usar a IA mesmo quando ela ajudaria. Vale experimentar em baixo risco.';}
+  else{rb='Confiança calibrada';rt='Usa a IA como insumo sem se entregar a ela — o ponto de equilíbrio.';}
+  document.getElementById('atitRes').innerHTML=`<div class="section-lab">Seu resultado</div><div class="card"><div class="result-grid">
+    <div><div class="barline"><span class="nm">Atitude líquida</span><span class="track"><span class="f" style="width:${a.atitude}%;background:var(--ia)"></span></span><span class="v">${a.atitude}</span></div>
+    <div class="barline"><span class="nm">Calibração de confiança</span><span class="track"><span class="f" style="width:${a.reliance}%;background:var(--humano)"></span></span><span class="v">${a.reliance}</span></div>
+    <p class="note" style="margin-top:8px">Atitude: 50 é neutro. Confiança: 50 é calibrado.</p></div>
+    <div class="quad-read"><div class="badge">${rb}</div><p>${rt}</p></div></div>
+    <div class="flag ${a.atitude>=50?'ok':'warn'}" style="margin-top:14px">${a.atitude>=50?'Atitude favorável — boa energia para a adoção.':'Atitude com reservas — o receio costuma ser a verdadeira barreira, antes da técnica.'}</div></div>`;
+  document.getElementById('atitRes').scrollIntoView({behavior:'smooth',block:'start'});}
+
+/* ============ EQUIPE ============ */
+likert('equipeBox',EQUIPE,'e',()=>{const n=countAns('e',EQUIPE.length);document.getElementById('equipeNote').textContent=n+'/'+EQUIPE.length;document.getElementById('equipeDone').disabled=n<EQUIPE.length;saveEquipeRaw();});
+function saveEquipeRaw(){S.equipeRaw=EQUIPE.map((_,i)=>val('e'+i));save();}
+document.getElementById('equipeDone').addEventListener('click',()=>{computeEquipe();syncRemote();});
+function computeEquipe(silent){const ps=[],hib=[];EQUIPE.forEach((it,i)=>{let v=val('e'+i);if(it.rev)v=6-v;(it.g==='ps'?ps:hib).push(v);});
+  const m=a=>a.reduce((x,y)=>x+y,0)/a.length;S.equipe={ps:Math.round(to100(m(ps))),hib:Math.round(to100(m(hib)))};save();updateHub();if(!silent)renderEquipeResult();}
+function equipeType(ps,hib){if(ps>=55&&hib>=55)return['Equipe aumentada pronta','Base segura e prática híbrida instalada. Acelere e proteja a cultura.'];
+  if(ps>=55&&hib<55)return['Segura, ainda não híbrida','A confiança existe; falta dar método e permissão para experimentar com IA.'];
+  if(ps<55&&hib>=55)return['Usa IA, mas no medo','Alerta: gente usando IA sem segurança esconde uso e erro. Endereçe a segurança primeiro.'];
+  return['Começo de jornada','Comece pela segurança psicológica — sem ela, nenhuma prática híbrida sustenta.'];}
+function renderEquipeResult(){const e=S.equipe,[nm,desc]=equipeType(e.ps,e.hib);
+  document.getElementById('equipeRes').innerHTML=`<div class="section-lab">Seu resultado</div><div class="card"><div class="result-grid">
+    <div><div class="barline"><span class="nm">Segurança psicológica</span><span class="track"><span class="f" style="width:${e.ps}%;background:var(--equipe)"></span></span><span class="v">${e.ps}</span></div>
+    <div class="barline"><span class="nm">Prontidão híbrida</span><span class="track"><span class="f" style="width:${e.hib}%;background:var(--ia)"></span></span><span class="v">${e.hib}</span></div></div>
+    <div class="quad-read"><div class="badge" style="background:var(--equipe)">${nm}</div><p>${desc}</p></div></div></div>`;
+  document.getElementById('equipeRes').scrollIntoView({behavior:'smooth',block:'start'});}
+
+/* ============ ORG ============ */
+likert('orgBox',ORG,'o',()=>{const n=countAns('o',ORG.length);document.getElementById('orgNote').textContent=n+'/'+ORG.length;document.getElementById('orgDone').disabled=n<ORG.length;saveOrgRaw();});
+function saveOrgRaw(){S.orgRaw=ORG.map((_,i)=>val('o'+i));save();}
+document.getElementById('orgDone').addEventListener('click',()=>{computeOrg();syncRemote();});
+function computeOrg(silent){const doms=ORG.map((it,i)=>({dom:it.dom,score:Math.round(to100(val('o'+i)))}));
+  const overall=Math.round(doms.reduce((a,d)=>a+d.score,0)/doms.length);const bn=doms.reduce((a,b)=>b.score<a.score?b:a);
+  S.org={doms,overall,bottleneck:bn.dom,stage:scoreToStage(overall)};save();updateHub();if(!silent)renderOrgResult();}
+function renderOrgResult(){const o=S.org;let bars=o.doms.map(d=>`<div class="barline"><span class="nm">${d.dom}</span><span class="track"><span class="f" style="width:${d.score}%;background:var(--org)"></span></span><span class="v">${d.score}</span></div>`).join('');
+  document.getElementById('orgRes').innerHTML=`<div class="section-lab">Seu resultado</div><div class="card">
+    <div class="quad-read" style="margin-bottom:12px"><div class="badge" style="background:var(--org)">${ORG_STAGES[o.stage]}</div><p>Estágio ${o.stage+1} de 5 · índice ${o.overall}/100. O gargalo da sua área é <b>${o.bottleneck}</b>.</p></div>${bars}
+    <p class="note" style="margin-top:10px">O objetivo não é a nota: é achar o gargalo. Mover o domínio mais fraco rende mais que reforçar o mais forte.</p></div>`;
+  document.getElementById('orgRes').scrollIntoView({behavior:'smooth',block:'start'});}
+
+/* ============ SÍNTESE ============ */
+function indivType(stage,att){const hiCap=stage>=3,hiAtt=att>=50;
+  if(hiCap&&hiAtt)return['Aliado / Multiplicador','Capacidade e vontade no mesmo lugar. É quem puxa os outros.'];
+  if(hiCap&&!hiAtt)return['Cético competente','Sabe fazer, mas tem reservas. Precisa de propósito e de ser ouvido, não de treino.'];
+  if(!hiCap&&hiAtt)return['Entusiasta','Vontade de sobra, base em formação. Precisa de método e de freios.'];
+  return['À margem','Pouca capacidade e pouca atração ainda. Precisa de uma porta de entrada concreta.'];}
+function renderSynth(){
+  const si=document.getElementById('synIndiv');
+  if(S.mat&&S.atit){const[nm,desc]=indivType(S.mat.stage+1,S.atit.atitude);
+    si.innerHTML=`<div class="result-grid"><svg id="capatt" viewBox="0 0 240 240" width="100%" style="max-width:260px;display:block;margin:0 auto"></svg>
+      <div class="quad-read"><div class="badge">${nm}</div><p>${desc}</p></div></div>`;
+    const svg=document.getElementById('capatt'),m=22,sz=196,x0=m,y0=m;let s=`<rect x="${x0}" y="${y0}" width="${sz}" height="${sz}" fill="#FBFAF7" stroke="var(--line-strong)"/>`;
+    s+=`<line x1="${x0+sz/2}" y1="${y0}" x2="${x0+sz/2}" y2="${y0+sz}" stroke="var(--line)" stroke-dasharray="3 3"/><line x1="${x0}" y1="${y0+sz/2}" x2="${x0+sz}" y2="${y0+sz/2}" stroke="var(--line)" stroke-dasharray="3 3"/>`;
+    [['À margem',.26,15],['Entusiasta',.73,15],['Cético comp.',.26,sz-8],['Aliado',.73,sz-8]].forEach(l=>s+=`<text x="${x0+sz*l[1]}" y="${y0+l[2]}" font-family="Archivo" font-size="9" font-weight="700" fill="var(--muted)" text-anchor="middle">${l[0]}</text>`);
+    s+=`<text x="${x0+sz/2}" y="${y0+sz+15}" font-family="IBM Plex Mono" font-size="8" fill="var(--ia)" text-anchor="middle">ATITUDE →</text><text x="${x0-7}" y="${y0+sz/2}" font-family="IBM Plex Mono" font-size="8" fill="var(--humano)" text-anchor="middle" transform="rotate(-90 ${x0-7} ${y0+sz/2})">CAPACIDADE →</text>`;
+    const px=x0+(S.atit.atitude/100)*sz,py=y0+sz-(S.mat.stage/4)*sz;s+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="8" fill="var(--ink)"/>`;svg.innerHTML=s;
+  } else si.innerHTML='<p class="synth-empty">Conclua Maturidade e Atitude para ver o mapa capacidade × atitude.</p>';
+  const se=document.getElementById('synEquipe');
+  if(S.equipe){const[nm,desc]=equipeType(S.equipe.ps,S.equipe.hib);se.innerHTML=`<div class="quad-read"><div class="badge" style="background:var(--equipe)">${nm}</div><p>Segurança ${S.equipe.ps} · prontidão híbrida ${S.equipe.hib}. ${desc}</p></div>`;}
+  else se.innerHTML='<p class="synth-empty">Conclua a lente de equipe.</p>';
+  const so=document.getElementById('synOrg');
+  if(S.org)so.innerHTML=`<div class="quad-read"><div class="badge" style="background:var(--org)">${ORG_STAGES[S.org.stage]}</div><p>Índice ${S.org.overall}/100 · gargalo em <b>${S.org.bottleneck}</b>.</p></div>`;
+  else so.innerHTML='<p class="synth-empty">Conclua a lente de área.</p>';
+  renderReadout();
+}
+function renderReadout(){const r=document.getElementById('readout'),parts=[];
+  if(S.mat&&S.atit){const[nm,desc]=indivType(S.mat.stage+1,S.atit.atitude);parts.push(`<p><span class="lead">Você:</span> ${nm.toLowerCase()}. ${desc}</p>`);}
+  const cross=[];
+  if(S.mat&&S.equipe){if(S.mat.stage>=3&&S.equipe.ps<55)cross.push('Você está pronto, mas o time ainda não é seguro — o risco é virar referência solitária enquanto as pessoas usam IA escondido.');
+    if(S.mat.stage<=1&&S.equipe.hib>=55)cross.push('Seu time experimenta mais com IA do que você — apoie-se nele para subir sua curva.');}
+  if(S.equipe&&S.org&&S.equipe.hib>=55&&S.org.overall<45)cross.push('O time tem energia para IA, mas a área trava em '+S.org.bottleneck.toLowerCase()+' — sem isso, o esforço local não escala.');
+  if(S.atit&&S.atit.reliance>=68&&S.org&&S.org.doms&&S.org.doms.find(d=>d.dom==='Governança')&&S.org.doms.find(d=>d.dom==='Governança').score<45)cross.push('Atenção: propensão a confiar demais na IA num ambiente de baixa governança — onde erros assistidos passam despercebidos.');
+  if(cross.length)parts.push('<p><span class="lead">Os planos juntos:</span> '+cross.join(' ')+'</p>');
+  r.innerHTML='<h3>Leitura do sistema</h3>'+(parts.length?parts.join(''):'<p class="synth-empty">Conclua pelo menos dois planos para a leitura cruzada.</p>');
+}
+
+/* ============ HUB STATUS ============ */
+function updateHub(){
+  const mark=(cls,id,txt,done)=>{document.getElementById(id).textContent=txt;document.querySelector('.lens.'+cls).classList.toggle('done',done);};
+  mark('indiv','st-mat',S.mat?('estágio '+(S.mat.stage+1)+' · '+STAGES[S.mat.stage].n):'não feito',!!S.mat);
+  mark('atit','st-atit',S.atit?('atitude '+S.atit.atitude+' · confiança '+S.atit.reliance):'não feito',!!S.atit);
+  mark('equipe','st-equipe',S.equipe?('seg. '+S.equipe.ps+' · híbrido '+S.equipe.hib):'não feito',!!S.equipe);
+  mark('org','st-org',S.org?(ORG_STAGES[S.org.stage]+' · gargalo '+S.org.bottleneck):'não feito',!!S.org);
+  const done=[S.mat,S.atit,S.equipe,S.org].filter(Boolean).length;
+  document.getElementById('hubNote').textContent=done+' de 4 concluídas';
+}
+
+/* ============ INIT ============ */
+(function init(){
+  // restaurar respostas das lentes likert
+  restore('a',ATIT,S.atitRaw);
+  restore('e',EQUIPE,S.equipeRaw);
+  restore('o',ORG,S.orgRaw);
+  // refletir contagens/resultados já salvos
+  if(S.atitRaw){const n=countAns('a',ATIT.length);document.getElementById('atitNote').textContent=n+'/'+ATIT.length;document.getElementById('atitDone').disabled=n<ATIT.length;}
+  if(S.equipeRaw){const n=countAns('e',EQUIPE.length);document.getElementById('equipeNote').textContent=n+'/'+EQUIPE.length;document.getElementById('equipeDone').disabled=n<EQUIPE.length;}
+  if(S.orgRaw){const n=countAns('o',ORG.length);document.getElementById('orgNote').textContent=n+'/'+ORG.length;document.getElementById('orgDone').disabled=n<ORG.length;}
+  if(S.atit)renderAtitResult();
+  if(S.equipe)renderEquipeResult();
+  if(S.org)renderOrgResult();
+  updateHub();
+  setSync(tursoConfigured()?'cloud':'local', tursoConfigured()?'pronto para sincronizar':'salvo só neste navegador');
+  // roteamento: aluno já identificado vai direto ao hub
+  if(S.nome&&S.turma){
+    inNome.value=S.nome;inTurma.value=S.turma;
+    document.getElementById('hubGreet').textContent='olá, '+S.nome.split(' ')[0]+' · turma '+S.turma;
+    show('hub');
+  }else{show('gate');}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel do Instrutor · Líder Aumentado por IA · WEG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#F6F5F1;--surface:#FFFFFF;--ink:#16191E;--ink-soft:#3C434C;--muted:#737B85;
+    --line:#E4E1D9;--line-strong:#CFCABE;--humano:#C0612A;--humano-soft:#F3E4D6;--ia:#1B6E87;--ia-soft:#DCEAEE;
+    --equipe:#6B4E8C;--org:#3F6B4A;--ok:#3F6B4A;--warn:#9A3324;--warn-soft:#F6E3DE;
+    --s1:#C9C6BD;--s2:#9FB6A4;--s3:#5E96A0;--s4:#2D7388;--s5:#16465A;
+    --radius:14px;--shadow:0 1px 2px rgba(20,25,30,.05),0 10px 30px rgba(20,25,30,.07)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{font-family:'Archivo',sans-serif;letter-spacing:-.01em}.mono{font-family:'IBM Plex Mono',monospace}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);background:rgba(246,245,241,.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20}
+  .hbar{display:flex;align-items:center;gap:12px;padding:13px 0}
+  .mark{width:30px;height:30px;border-radius:7px;flex:none;background:linear-gradient(135deg,var(--humano) 0 50%,var(--ia) 50% 100%);position:relative}
+  .mark::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,var(--paper) 0 26%,transparent 27%)}
+  .hbar b{font-family:'Archivo';font-weight:800;font-size:14px}.hbar .sub{font-size:10px;color:var(--muted);letter-spacing:.13em;text-transform:uppercase}
+  .tabs{margin-left:auto;display:flex;gap:6px}
+  .tab{font-family:'IBM Plex Mono';font-size:12px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-soft);padding:7px 14px;border-radius:9px;cursor:pointer}
+  .tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .view{display:none;padding:28px 0 80px;animation:fade .3s}.view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+  .eyebrow{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  h1.title{font-size:28px;font-weight:800;margin:0 0 6px}
+  .lede{font-size:16px;color:var(--ink-soft);max-width:64ch;margin:0 0 6px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);margin:16px 0}
+  input[type=text]{font-family:'Inter';font-size:15px;padding:10px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink)}
+  .btn{font-family:'Archivo';font-weight:700;font-size:14px;border:none;border-radius:10px;padding:11px 18px;cursor:pointer;transition:.15s}
+  .btn.primary{background:var(--ink);color:#fff}.btn.primary:hover:not(:disabled){transform:translateY(-1px)}
+  .btn.ghost{background:none;border:1px solid var(--line-strong);color:var(--ink-soft)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .config-warn{background:var(--warn-soft);border:1px solid #e6c4bc;color:#6a2418;border-radius:10px;padding:12px 15px;font-size:13px;margin:10px 0}
+  /* code display */
+  .codebig{font-family:'IBM Plex Mono';font-weight:600;font-size:54px;letter-spacing:.04em;color:var(--ink);
+    background:#FBFAF7;border:2px dashed var(--line-strong);border-radius:14px;padding:24px;text-align:center;margin:14px 0}
+  .turma-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .turma-item{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;padding:11px 14px;cursor:pointer}
+  .turma-item:hover{border-color:var(--ia)}
+  .turma-item .cod{font-family:'IBM Plex Mono';font-weight:600;font-size:15px}
+  .turma-item .meta{font-size:12px;color:var(--muted);margin-left:auto}
+  /* dashboard */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:8px 0 4px}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+  .kpi .lab{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{font-family:'Archivo';font-weight:800;font-size:30px;line-height:1.1;margin-top:4px}
+  .kpi .sub{font-size:11.5px;color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  .panel h3{margin:0 0 4px;font-size:16px}.panel .h-sub{font-size:12px;color:var(--muted);margin-bottom:12px}
+  .distbar{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}
+  .distbar .nm{width:120px;color:var(--ink-soft)}.distbar .track{flex:1;height:16px;background:#EDEBE4;border-radius:5px;overflow:hidden}
+  .distbar .f{height:100%;border-radius:5px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;color:#fff;font-family:'IBM Plex Mono';font-size:11px}
+  table.students{width:100%;border-collapse:collapse;font-size:13px}
+  table.students th{text-align:left;font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px 8px;border-bottom:2px solid var(--line-strong)}
+  table.students td{padding:9px 8px;border-bottom:1px solid var(--line)}
+  table.students .chip{font-family:'IBM Plex Mono';font-size:11px;padding:2px 8px;border-radius:20px;color:#fff}
+  .empty{color:var(--muted);font-size:14px;padding:20px;text-align:center}
+  .note{font-size:12.5px;color:var(--muted)}
+  @media (max-width:860px){.kpis{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.codebig{font-size:38px}}
+  @media (max-width:560px){
+    .wrap{padding:0 16px}
+    .view{padding:22px 0 60px}
+    h1.title{font-size:22px}
+    .lede{font-size:14.5px}
+    .card,.panel,.kpi{padding:16px}
+    .hbar{flex-wrap:wrap;gap:9px;padding:11px 0}
+    .hbar b{font-size:13px}.hbar .sub{font-size:9px;letter-spacing:.07em}
+    .tabs{margin-left:0;width:100%;gap:8px}
+    .tab{flex:1;text-align:center;padding:9px 10px}
+    .codebig{font-size:30px;padding:18px;letter-spacing:.02em}
+    .row{flex-direction:column;align-items:stretch;gap:10px}
+    .row input[type=text]{width:100%!important}
+    .row .btn{width:100%}
+    .row .note{text-align:center}
+    .kpis{grid-template-columns:1fr 1fr;gap:10px}
+    .kpi .v{font-size:26px}
+    .distbar .nm{width:96px;font-size:12px}
+    .turma-item{flex-wrap:wrap;gap:6px 12px}
+    .turma-item .meta{margin-left:0;width:100%}
+  }
+  @media (max-width:380px){.kpis{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap hbar">
+    <div class="mark"></div>
+    <div><b>FACTFULNESS</b><div class="sub">Painel do Instrutor · Líder Aumentado · WEG</div></div>
+    <div class="tabs"><button class="tab active" data-tab="admin">Turmas</button><button class="tab" data-tab="dash">Painel</button></div>
+  </div>
+</header>
+<div class="wrap">
+
+<!-- ADMIN -->
+<section class="view active" id="admin">
+  <div class="eyebrow">administração</div>
+  <h1 class="title">Códigos de turma</h1>
+  <p class="lede">Gere um código, mostre na tela para a turma, e os alunos o usam para entrar. O mesmo material serve para quantas turmas você quiser — cada uma com seu código.</p>
+  <div id="cfgWarn"></div>
+  <div class="card">
+    <div class="row">
+      <input type="text" id="turmaNome" placeholder="Nome da turma (ex.: WEG Gerência Jan/26)" style="flex:1;min-width:220px">
+      <button class="btn primary" id="genCode">Gerar código</button>
+    </div>
+    <div class="codebig" id="codeDisplay">— — — —</div>
+    <div class="row">
+      <button class="btn ghost" id="copyCode" disabled>Copiar código</button>
+      <button class="btn ghost" id="registerCode" disabled>Registrar turma na base</button>
+      <span class="note" id="adminMsg"></span>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Turmas registradas</h3>
+    <p class="note">Clique numa turma para abrir o painel dela.</p>
+    <div class="turma-list" id="turmaList"><div class="empty">Nenhuma turma carregada. Registre uma acima ou clique em "Atualizar".</div></div>
+    <div class="row" style="margin-top:12px"><button class="btn ghost" id="loadTurmas">Atualizar lista</button></div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section class="view" id="dash">
+  <div class="eyebrow">painel analítico</div>
+  <h1 class="title">Retrato da turma</h1>
+  <div class="card">
+    <div class="row">
+      <input type="text" id="dashCode" placeholder="Código da turma" style="width:200px">
+      <button class="btn primary" id="loadDash">Carregar</button>
+      <button class="btn ghost" id="refreshDash" disabled>Atualizar</button>
+      <span class="note" id="dashMsg"></span>
+    </div>
+  </div>
+  <div id="dashBody"></div>
+</section>
+
+</div>
+
+<script>
+/* ====================================================================
+   CONFIGURAÇÃO — mesma base usada pelo HTML do aluno.
+   Pode usar um token de leitura aqui se preferir.
+   ==================================================================== */
+/* credenciais mascaradas (base64 invertido) — mascaramento leve, não criptografia */
+const _dec = s => { try { return atob(s.split('').reverse().join('')); } catch(e){ return ''; } };
+const TURSO_URL   = _dec("=8Wau82cyVHduITL0NXYl1yc11yc3FmLi1mZlJHZuFWLzVGduVmcldWLnV2dv8iOsF3cilGb");
+const TURSO_TOKEN = _dec("3RkN3xGVVRUR5InblJ2Rz1SW2YXWtIHTYB1QKFkePVmMvl1V6NXTyQzTkFXZOdjVTR0cB9WVRB1c2s2ax4WNRBla4hWdxEEbldXcE9GaolETwQjRyQlLw4WSxU1VOVTSE10MjRlT00EVORXSU5EeFdFT6FkeNBDMTl1dZJTT0tGVahXTE9EeRRlTp9maJtGbtNWa3lWSrJ1VNlXSq1keJR1Tw0ERORXQql1aoRFT3l1VONDMT10dZpXW0VkeOpmSXpVNFRUTp9maJtGbtl0cNRlT3dmeOlXRE90MFp2TpFFWZBnSDxUaj52Yp9maJhmS5VmL5o0QWhFcrlkNJN0Y1IlbJNXSTFFVSVkWGpUaPl2YHJGaKlXZ");
+
+const STAGES=[{n:'Espectador',c:'var(--s1)'},{n:'Experimentador',c:'var(--s2)'},{n:'Praticante',c:'var(--s3)'},{n:'Integrador',c:'var(--s4)'},{n:'Orquestrador',c:'var(--s5)'}];
+const ORG_DOMS=['Estratégia','Dados','Talento','Governança','Cultura'];
+
+/* ============ TURSO ============ */
+function configured(){return TURSO_URL.trim()!==""&&TURSO_TOKEN.trim()!=="";}
+async function exec(statements){
+  const base=TURSO_URL.replace(/^libsql:\/\//,'https://').replace(/^wss:\/\//,'https://').replace(/\/+$/,'');
+  const requests=statements.map(s=>({type:'execute',stmt:{sql:s.sql,args:(s.args||[]).map(v=>v===null?{type:'null'}:{type:'text',value:String(v)})}}));
+  requests.push({type:'close'});
+  const r=await fetch(base+'/v2/pipeline',{method:'POST',headers:{'Authorization':'Bearer '+TURSO_TOKEN,'Content-Type':'application/json'},body:JSON.stringify({requests})});
+  if(!r.ok)throw new Error('HTTP '+r.status+' — verifique URL/token e se a rede libera a base');
+  const data=await r.json();(data.results||[]).forEach(x=>{if(x.type==='error')throw new Error(x.error&&x.error.message||'erro Turso');});
+  return data;
+}
+function rowsOf(data,idx){const res=data.results&&data.results[idx];if(!res||res.type!=='ok')return[];
+  const r=res.response&&res.response.result;if(!r||!r.rows)return[];
+  const cols=r.cols.map(c=>c.name);
+  return r.rows.map(row=>{const o={};row.forEach((cell,i)=>o[cols[i]]=cell&&cell.value!=null?cell.value:null);return o;});}
+async function ensureSchema(){await exec([
+  {sql:`CREATE TABLE IF NOT EXISTS respostas(id TEXT PRIMARY KEY,turma TEXT NOT NULL,nome TEXT,payload TEXT NOT NULL,atualizado_em TEXT)`},
+  {sql:`CREATE TABLE IF NOT EXISTS turmas(codigo TEXT PRIMARY KEY,nome TEXT,criada_em TEXT,ativa INTEGER DEFAULT 1)`}]);}
+
+/* ============ TABS ============ */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(t.dataset.tab).classList.add('active');}));
+
+if(!configured())document.getElementById('cfgWarn').innerHTML='<div class="config-warn"><b>Base não configurada.</b> Preencha TURSO_URL e TURSO_TOKEN no topo do script (os mesmos do HTML do aluno) para gerar/ler turmas. Sem isso, o painel não recebe respostas.</div>';
+
+/* ============ ADMIN ============ */
+let currentCode='';
+function makeCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=c[Math.floor(Math.random()*c.length)];return 'WEG-'+s;}
+document.getElementById('genCode').addEventListener('click',()=>{
+  currentCode=makeCode();document.getElementById('codeDisplay').textContent=currentCode;
+  document.getElementById('copyCode').disabled=false;document.getElementById('registerCode').disabled=!configured();
+  document.getElementById('adminMsg').textContent='';});
+document.getElementById('copyCode').addEventListener('click',()=>{
+  navigator.clipboard&&navigator.clipboard.writeText(currentCode);document.getElementById('adminMsg').textContent='copiado';});
+document.getElementById('registerCode').addEventListener('click',async()=>{
+  const msg=document.getElementById('adminMsg');msg.textContent='registrando...';
+  try{await ensureSchema();
+    await exec([{sql:`INSERT INTO turmas(codigo,nome,criada_em,ativa) VALUES(?,?,?,1) ON CONFLICT(codigo) DO UPDATE SET nome=excluded.nome`,
+      args:[currentCode,document.getElementById('turmaNome').value.trim()||currentCode,new Date().toISOString()]}]);
+    msg.textContent='turma registrada ✓';loadTurmas();
+  }catch(e){msg.textContent='falhou: '+e.message;}});
+async function loadTurmas(){
+  if(!configured())return;
+  try{await ensureSchema();
+    const d=await exec([{sql:`SELECT t.codigo,t.nome,t.criada_em,(SELECT COUNT(*) FROM respostas r WHERE r.turma=t.codigo) AS n FROM turmas t ORDER BY t.criada_em DESC`}]);
+    const rows=rowsOf(d,0);const list=document.getElementById('turmaList');
+    if(!rows.length){list.innerHTML='<div class="empty">Nenhuma turma registrada ainda.</div>';return;}
+    list.innerHTML=rows.map(r=>`<div class="turma-item" data-cod="${r.codigo}"><span class="cod">${r.codigo}</span><span>${r.nome||''}</span><span class="meta">${r.n||0} resposta(s)</span></div>`).join('');
+    list.querySelectorAll('.turma-item').forEach(el=>el.addEventListener('click',()=>{openDash(el.dataset.cod);}));
+  }catch(e){document.getElementById('turmaList').innerHTML='<div class="empty">Erro ao carregar: '+e.message+'</div>';}}
+document.getElementById('loadTurmas').addEventListener('click',loadTurmas);
+
+/* ============ DASHBOARD ============ */
+function openDash(code){document.querySelector('.tab[data-tab="dash"]').click();document.getElementById('dashCode').value=code;loadDash();}
+document.getElementById('loadDash').addEventListener('click',loadDash);
+document.getElementById('refreshDash').addEventListener('click',loadDash);
+let lastCode='';
+async function loadDash(){
+  const code=document.getElementById('dashCode').value.trim();if(!code)return;
+  const msg=document.getElementById('dashMsg');
+  if(!configured()){msg.textContent='configure a base primeiro';return;}
+  msg.textContent='carregando...';document.getElementById('refreshDash').disabled=true;
+  try{await ensureSchema();
+    const d=await exec([{sql:`SELECT id,nome,payload,atualizado_em FROM respostas WHERE turma=? ORDER BY atualizado_em DESC`,args:[code]}]);
+    const rows=rowsOf(d,0);lastCode=code;
+    const students=rows.map(r=>{let p={};try{p=JSON.parse(r.payload)}catch(e){}return {id:r.id,nome:r.nome||p.nome||'—',mat:p.mat,atit:p.atit,equipe:p.equipe,org:p.org,at:r.atualizado_em};});
+    renderDash(code,students);msg.textContent=students.length+' resposta(s)';document.getElementById('refreshDash').disabled=false;
+  }catch(e){msg.textContent='erro: '+e.message;document.getElementById('dashBody').innerHTML='';}}
+
+function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;}
+function renderDash(code,students){
+  const body=document.getElementById('dashBody');
+  if(!students.length){body.innerHTML='<div class="card"><div class="empty">Nenhuma resposta nesta turma ainda.</div></div>';return;}
+  const withMat=students.filter(s=>s.mat),withAtit=students.filter(s=>s.atit),withEq=students.filter(s=>s.equipe),withOrg=students.filter(s=>s.org);
+  const stageMean=avg(withMat.map(s=>s.mat.stage+1));
+  const atitMean=avg(withAtit.map(s=>s.atit.atitude));
+  const psMean=avg(withEq.map(s=>s.equipe.ps));
+  // kpis
+  let html=`<div class="kpis">
+    <div class="kpi"><div class="lab">Respondentes</div><div class="v">${students.length}</div><div class="sub">turma ${code}</div></div>
+    <div class="kpi"><div class="lab">Estágio médio</div><div class="v">${stageMean?stageMean.toFixed(1):'—'}</div><div class="sub">${withMat.length} fizeram maturidade</div></div>
+    <div class="kpi"><div class="lab">Atitude média</div><div class="v">${atitMean!=null?Math.round(atitMean):'—'}</div><div class="sub">50 = neutro</div></div>
+    <div class="kpi"><div class="lab">Seg. psicológica</div><div class="v">${psMean!=null?Math.round(psMean):'—'}</div><div class="sub">média da turma</div></div>
+  </div>`;
+  // stage distribution + scatter
+  const dist=[0,0,0,0,0];withMat.forEach(s=>dist[s.mat.stage]++);
+  const maxd=Math.max(1,...dist);
+  let distHtml=STAGES.map((s,i)=>`<div class="distbar"><span class="nm">${i+1} · ${s.n}</span><span class="track"><span class="f" style="width:${dist[i]/maxd*100}%;background:${s.c}">${dist[i]||''}</span></span></div>`).join('');
+  html+=`<div class="grid2">
+    <div class="panel"><h3>Distribuição de maturidade</h3><div class="h-sub">onde a turma está na jornada</div>${distHtml}</div>
+    <div class="panel"><h3>Capacidade × atitude</h3><div class="h-sub">cada ponto é um aluno (precisa das duas lentes)</div><svg id="scatter" viewBox="0 0 260 240" width="100%" style="max-width:300px;display:block;margin:0 auto"></svg></div>
+  </div>`;
+  // org radar + equipe
+  const domAvg=ORG_DOMS.map(dn=>{const vals=withOrg.map(s=>{const d=(s.org.doms||[]).find(x=>x.dom===dn);return d?d.score:null}).filter(v=>v!=null);return avg(vals);});
+  const botCount={};withOrg.forEach(s=>{if(s.org.bottleneck)botCount[s.org.bottleneck]=(botCount[s.org.bottleneck]||0)+1;});
+  const topBot=Object.entries(botCount).sort((a,b)=>b[1]-a[1])[0];
+  const psVals=withEq.map(s=>s.equipe.ps),hibVals=withEq.map(s=>s.equipe.hib);
+  html+=`<div class="grid2">
+    <div class="panel"><h3>Prontidão da área (média)</h3><div class="h-sub">${topBot?('gargalo mais citado: <b>'+topBot[0]+'</b> ('+topBot[1]+')'):'sem dados de área'}</div><svg id="orgRadar" viewBox="0 0 260 240" width="100%" style="max-width:300px;display:block;margin:0 auto"></svg></div>
+    <div class="panel"><h3>Equipe</h3><div class="h-sub">média e dispersão (a divergência também é diagnóstico)</div>
+      <div class="distbar"><span class="nm">Seg. psicológica</span><span class="track"><span class="f" style="width:${avg(psVals)||0}%;background:var(--equipe)">${psVals.length?Math.round(avg(psVals)):''}</span></span></div>
+      <div class="distbar"><span class="nm">Prontidão híbrida</span><span class="track"><span class="f" style="width:${avg(hibVals)||0}%;background:var(--ia)">${hibVals.length?Math.round(avg(hibVals)):''}</span></span></div>
+      <p class="note" style="margin-top:8px">${psVals.length?('Segurança varia de '+Math.min(...psVals)+' a '+Math.max(...psVals)+' entre os respondentes.'):'Sem respostas de equipe ainda.'}</p>
+    </div>
+  </div>`;
+  // tabela
+  html+=`<div class="panel" style="margin-top:16px"><h3>Respondentes</h3><div style="overflow-x:auto"><table class="students">
+    <thead><tr><th>Nome</th><th>Maturidade</th><th>Atitude</th><th>Confiança</th><th>Seg.</th><th>Área</th></tr></thead><tbody>
+    ${students.map(s=>`<tr>
+      <td>${s.nome}</td>
+      <td>${s.mat?`<span class="chip" style="background:${STAGES[s.mat.stage].c}">${STAGES[s.mat.stage].n}</span>`:'—'}</td>
+      <td>${s.atit?s.atit.atitude:'—'}</td>
+      <td>${s.atit?s.atit.reliance:'—'}</td>
+      <td>${s.equipe?s.equipe.ps:'—'}</td>
+      <td>${s.org?(s.org.overall+' · '+(s.org.bottleneck||'')):'—'}</td>
+    </tr>`).join('')}</tbody></table></div></div>`;
+  body.innerHTML=html;
+  drawScatter(withMat.filter(s=>s.atit));
+  drawOrgRadar(domAvg);
+}
+function drawScatter(students){const svg=document.getElementById('scatter');if(!svg)return;const m=22,sz=196,x0=m,y0=m;
+  let s=`<rect x="${x0}" y="${y0}" width="${sz}" height="${sz}" fill="#FBFAF7" stroke="var(--line-strong)"/>`;
+  s+=`<line x1="${x0+sz/2}" y1="${y0}" x2="${x0+sz/2}" y2="${y0+sz}" stroke="var(--line)" stroke-dasharray="3 3"/><line x1="${x0}" y1="${y0+sz/2}" x2="${x0+sz}" y2="${y0+sz/2}" stroke="var(--line)" stroke-dasharray="3 3"/>`;
+  [['À margem',.26,15],['Entusiasta',.73,15],['Cético comp.',.26,sz-8],['Aliado',.73,sz-8]].forEach(l=>s+=`<text x="${x0+sz*l[1]}" y="${y0+l[2]}" font-family="Archivo" font-size="9" font-weight="700" fill="var(--muted)" text-anchor="middle">${l[0]}</text>`);
+  s+=`<text x="${x0+sz/2}" y="${y0+sz+15}" font-family="IBM Plex Mono" font-size="8" fill="var(--ia)" text-anchor="middle">ATITUDE →</text><text x="${x0-7}" y="${y0+sz/2}" font-family="IBM Plex Mono" font-size="8" fill="var(--humano)" text-anchor="middle" transform="rotate(-90 ${x0-7} ${y0+sz/2})">CAPACIDADE →</text>`;
+  students.forEach(st=>{const px=x0+(st.atit.atitude/100)*sz,py=y0+sz-(st.mat.stage/4)*sz;s+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="5" fill="var(--ink)" opacity=".7"/>`;});
+  svg.innerHTML=s;}
+function drawOrgRadar(domAvg){const svg=document.getElementById('orgRadar');if(!svg)return;const cx=130,cy=120,Rr=80,N=5,ang=i=>(-90+i*72)*Math.PI/180,pt=(i,r)=>[cx+r*Math.cos(ang(i)),cy+r*Math.sin(ang(i))];
+  let s='';for(let ring=1;ring<=4;ring++){let p=[];for(let i=0;i<N;i++){const[x,y]=pt(i,Rr*ring/4);p.push(x.toFixed(1)+','+y.toFixed(1));}s+=`<polygon points="${p.join(' ')}" fill="none" stroke="var(--line)"/>`;}
+  for(let i=0;i<N;i++){const[x,y]=pt(i,Rr);s+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line-strong)"/>`;const[lx,ly]=pt(i,Rr+16);s+=`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-family="IBM Plex Mono" font-size="9" font-weight="600" fill="var(--org)" text-anchor="middle" dominant-baseline="middle">${ORG_DOMS[i]}</text>`;}
+  if(domAvg.some(v=>v!=null)){let p=[];for(let i=0;i<N;i++){const v=domAvg[i]||0;const[x,y]=pt(i,Rr*v/100);p.push(x.toFixed(1)+','+y.toFixed(1));}
+    s+=`<polygon points="${p.join(' ')}" fill="rgba(63,107,74,.16)" stroke="var(--org)" stroke-width="2"/>`;p.forEach(q=>{const[x,y]=q.split(',');s+=`<circle cx="${x}" cy="${y}" r="3" fill="var(--org)"/>`;});}
+  svg.innerHTML=s;}
+
+/* init */
+if(configured())loadTurmas();
+</script>
+</body>
+</html>
