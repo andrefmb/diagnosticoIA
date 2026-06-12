@@ -87,9 +87,64 @@
     .turma-item .meta{margin-left:0;width:100%}
   }
   @media (max-width:380px){.kpis{grid-template-columns:1fr}}
+  /* gate de acesso */
+  #gate-lock{position:fixed;inset:0;z-index:9999;background:var(--paper);display:flex;align-items:center;justify-content:center;padding:24px}
+  #gate-lock.hidden{display:none}
+  body.locked{overflow:hidden}
+  .gate-box{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--ia);border-radius:16px;box-shadow:var(--shadow);padding:30px 28px;max-width:380px;width:100%}
+  .gate-mark{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--humano) 0 50%,var(--ia) 50% 100%);position:relative;margin-bottom:16px}
+  .gate-mark::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,var(--surface) 0 26%,transparent 27%)}
+  .gate-eyebrow{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .gate-title{font-family:'Archivo';font-weight:800;font-size:24px;margin:0 0 6px}
+  .gate-lede{font-size:14px;color:var(--ink-soft);margin:0 0 18px}
+  #gatePw{width:100%;font-family:'Inter';font-size:15px;padding:12px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink)}
+  .gate-msg{font-family:'IBM Plex Mono';font-size:13px;color:var(--warn);margin-top:10px;min-height:18px}
+  .gate-back{display:inline-block;margin-top:14px;font-size:12.5px;color:var(--muted);text-decoration:none}
+  .gate-back:hover{color:var(--ink)}
 </style>
 </head>
-<body>
+<body class="locked">
+<div id="gate-lock">
+  <div class="gate-box">
+    <div class="gate-mark"></div>
+    <div class="gate-eyebrow">WEG · acesso restrito</div>
+    <h1 class="gate-title">Painel do Instrutor</h1>
+    <p class="gate-lede">Área restrita a instrutores. Digite a senha para continuar.</p>
+    <input type="password" id="gatePw" placeholder="Senha" autocomplete="off" autofocus>
+    <button class="btn primary" id="gateBtn" style="width:100%;margin-top:10px">Entrar</button>
+    <div class="gate-msg" id="gateMsg"></div>
+    <a class="gate-back" href="../">← voltar ao início</a>
+  </div>
+</div>
+<script>
+(function(){
+  /* Gate por hash SHA-256 (salgado). A senha em texto NÃO fica no HTML — só o hash,
+     que é via de mão única. Requer contexto seguro (https / localhost). */
+  const SALT="wegLiderAumentadoIA::v1::";
+  const HASH="6b8a558a8106e264376577b84a9e21e687e202af1af70bdb872b56c1535add34";
+  const SKEY="fact_instrutor_unlocked";
+  const lock=document.getElementById('gate-lock');
+  function unlock(){lock.classList.add('hidden');document.body.classList.remove('locked');}
+  try{ if(sessionStorage.getItem(SKEY)==='1'){unlock();return;} }catch(e){}
+  async function sha256hex(str){
+    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map(x=>x.toString(16).padStart(2,'0')).join('');
+  }
+  const pw=document.getElementById('gatePw'),btn=document.getElementById('gateBtn'),msg=document.getElementById('gateMsg');
+  async function attempt(){
+    if(!pw.value)return;
+    if(!(crypto&&crypto.subtle)){msg.textContent='abra via https (GitHub Pages)';return;}
+    try{
+      const h=await sha256hex(SALT+pw.value);
+      if(h===HASH){ try{sessionStorage.setItem(SKEY,'1');}catch(e){} msg.textContent=''; unlock(); }
+      else{ msg.textContent='senha incorreta'; pw.value=''; pw.focus(); }
+    }catch(e){ msg.textContent='erro ao verificar'; }
+  }
+  btn.addEventListener('click',attempt);
+  pw.addEventListener('keydown',e=>{if(e.key==='Enter')attempt();});
+  pw.focus();
+})();
+</script>
 <header>
   <div class="wrap hbar">
     <div class="mark"></div>
