@@ -189,8 +189,10 @@
       <input type="text" id="dashCode" placeholder="Código da turma" style="width:200px">
       <button class="btn primary" id="loadDash">Carregar</button>
       <button class="btn ghost" id="refreshDash" disabled>Atualizar</button>
+      <label class="note" style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none"><input type="checkbox" id="showNames"> Mostrar nomes</label>
       <span class="note" id="dashMsg"></span>
     </div>
+    <p class="note" style="margin:6px 0 0">Os nomes ficam ocultos por padrão. Marque acima para exibi-los.</p>
   </div>
   <div id="dashBody"></div>
 </section>
@@ -267,7 +269,8 @@ document.getElementById('loadTurmas').addEventListener('click',loadTurmas);
 function openDash(code){document.querySelector('.tab[data-tab="dash"]').click();document.getElementById('dashCode').value=code;loadDash();}
 document.getElementById('loadDash').addEventListener('click',loadDash);
 document.getElementById('refreshDash').addEventListener('click',loadDash);
-let lastCode='';
+let lastCode='',lastStudents=[];
+document.getElementById('showNames').addEventListener('change',()=>{if(lastStudents.length)renderDash(lastCode,lastStudents);});
 async function loadDash(){
   const code=document.getElementById('dashCode').value.trim();if(!code)return;
   const msg=document.getElementById('dashMsg');
@@ -277,12 +280,13 @@ async function loadDash(){
     const d=await exec([{sql:`SELECT id,nome,payload,atualizado_em FROM respostas WHERE turma=? ORDER BY atualizado_em DESC`,args:[code]}]);
     const rows=rowsOf(d,0);lastCode=code;
     const students=rows.map(r=>{let p={};try{p=JSON.parse(r.payload)}catch(e){}return {id:r.id,nome:r.nome||p.nome||'—',mat:p.mat,atit:p.atit,equipe:p.equipe,org:p.org,at:r.atualizado_em};});
-    renderDash(code,students);msg.textContent=students.length+' resposta(s)';document.getElementById('refreshDash').disabled=false;
+    lastStudents=students;renderDash(code,students);msg.textContent=students.length+' resposta(s)';document.getElementById('refreshDash').disabled=false;
   }catch(e){msg.textContent='erro: '+e.message;document.getElementById('dashBody').innerHTML='';}}
 
 function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;}
 function renderDash(code,students){
   const body=document.getElementById('dashBody');
+  const showNames=document.getElementById('showNames')&&document.getElementById('showNames').checked;
   if(!students.length){body.innerHTML='<div class="card"><div class="empty">Nenhuma resposta nesta turma ainda.</div></div>';return;}
   const withMat=students.filter(s=>s.mat),withAtit=students.filter(s=>s.atit),withEq=students.filter(s=>s.equipe),withOrg=students.filter(s=>s.org);
   const stageMean=avg(withMat.map(s=>s.mat.stage+1));
@@ -319,8 +323,8 @@ function renderDash(code,students){
   // tabela
   html+=`<div class="panel" style="margin-top:16px"><h3>Respondentes</h3><div style="overflow-x:auto"><table class="students">
     <thead><tr><th>Nome</th><th>Maturidade</th><th>Atitude</th><th>Confiança</th><th>Seg.</th><th>Área</th></tr></thead><tbody>
-    ${students.map(s=>`<tr>
-      <td>${s.nome}</td>
+    ${students.map((s,i)=>`<tr>
+      <td>${showNames?s.nome:'Participante '+(i+1)}</td>
       <td>${s.mat?`<span class="chip" style="background:${STAGES[s.mat.stage].c}">${STAGES[s.mat.stage].n}</span>`:'—'}</td>
       <td>${s.atit?s.atit.atitude:'—'}</td>
       <td>${s.atit?s.atit.reliance:'—'}</td>

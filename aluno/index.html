@@ -417,16 +417,21 @@ function renderMatResult(){
     <div class="section-lab">Calibração — o que você acha × demonstra</div><div class="card">
       <div class="result-grid"><svg id="msCalib" viewBox="0 0 240 240" width="100%" style="max-width:260px;display:block;margin:0 auto"></svg>
       <div class="quad-read"><div class="badge" id="msCalBadge">—</div><p id="msCalTxt"></p></div></div>
-      <div class="flag ${(R.overclaim>=0.67||R.consistency<0.65)?'warn':'ok'}" style="margin-top:14px">${(R.overclaim>=0.67||R.consistency<0.65)?'<b>Leia com cautela:</b> houve sinais de superestimativa ou inconsistência nas respostas.':'<b>Resposta consistente.</b> Sem sinais de inflação ou contradição.'}</div></div>
+      ${(R.overclaim>=0.67||R.consistency<0.65)?'<div class="flag warn" style="margin-top:14px"><b>Leia com cautela:</b> houve sinais de superestimativa ou inconsistência nas respostas — use este retrato como ponto de partida para conversa, não como veredito.</div>':''}</div>
     <div class="nav-row"><button class="btn ghost" data-open="hub">Voltar ao hub</button><button class="btn ghost" id="msRedo">Refazer</button></div>`;
   document.getElementById('ms5').innerHTML=html;
   document.querySelector('#ms5 [data-open]').addEventListener('click',()=>show('hub'));
   document.getElementById('msRedo').addEventListener('click',()=>{S.mat=null;S.matRaw=null;save();document.getElementById('matWizard').innerHTML='';buildMatWizard();});
   drawRadar('msRadar',R.dimScore);drawCmap('msCmap',R.dimScore);drawCalib('msCalib',R.percOverall,R.demoOverall);
-  const gap=R.percOverall-R.demoOverall,b=document.getElementById('msCalBadge'),tx=document.getElementById('msCalTxt');
-  if(gap>18){b.textContent='Superconfiança';b.style.background='var(--warn-soft)';b.style.color='var(--warn)';tx.textContent='Você se avalia acima do que demonstrou. É o ponto cego mais comum — diminua a distância entre confiança e prática.';}
-  else if(gap<-18){b.textContent='Subestimação';b.style.background='var(--ia-soft)';b.style.color='var(--ia)';tx.textContent='Você se sai melhor do que pensa. Confie mais no próprio julgamento.';}
-  else{b.textContent='Calibrado';b.style.background='var(--ok-soft)';b.style.color='var(--ok)';tx.textContent='Sua percepção bate com o que demonstra — boa autoconsciência.';}
+  const gap=R.percOverall-R.demoOverall,absGap=Math.abs(gap),b=document.getElementById('msCalBadge'),tx=document.getElementById('msCalTxt');
+  const base=`Você se avaliou em <b>${R.percOverall}/100</b> e demonstrou <b>${R.demoOverall}/100</b>`;
+  if(gap>18){b.textContent='Superconfiança';b.style.background='var(--warn-soft)';b.style.color='var(--warn)';
+    tx.innerHTML=`${base} — uma distância de <b>${absGap} pontos</b>. Sua percepção corre à frente da prática: é o ponto cego mais comum em quem lidera, porque quase ninguém te corrige. O risco não é a confiança em si, é decidir como se já dominasse o que ainda está em construção. Movimento concreto: pegue uma tarefa real desta semana, resolva com IA e confira o resultado contra uma fonte independente — transforme a segurança que você sente em evidência que você mostra.`;}
+  else if(gap<-18){b.textContent='Subestimação';b.style.background='var(--ia-soft)';b.style.color='var(--ia)';
+    tx.innerHTML=`${base} — ou seja, <b>${absGap} pontos acima</b> do que você imaginava. Você é mais capaz do que pensa, e isso tem um custo silencioso: por insegurança, você pode deixar de assumir a frente em iniciativas de IA onde já teria condição de liderar. Confie mais no próprio julgamento, ocupe esse espaço e use sua experiência para puxar quem ainda está começando.`;}
+  else{b.textContent='Calibrado';b.style.background='var(--ok-soft)';b.style.color='var(--ok)';
+    tx.innerHTML=`${base} — praticamente o mesmo. Isso é raro e vale ouro: você sabe o que sabe e reconhece o que ainda não domina, que é a própria base do bom julgamento sob incerteza. Para manter essa leitura afiada conforme sua capacidade cresce, siga se expondo a tarefas que esticam seu limite, não só às que já domina.`;}
+  if(R.overclaim>=0.67||R.consistency<0.65){tx.innerHTML+=` <span style="color:var(--muted)">(Leia com alguma cautela: o padrão das suas respostas teve sinais de superestimativa ou pouca consistência interna.)</span>`;}
 }
 function drawRadar(id,ds){const svg=document.getElementById(id),cx=140,cy=130,Rr=92,N=6,ang=i=>(-90+i*60)*Math.PI/180,pt=(i,r)=>[cx+r*Math.cos(ang(i)),cy+r*Math.sin(ang(i))];let s='';
   for(let ring=1;ring<=4;ring++){let p=[];for(let i=0;i<N;i++){const[x,y]=pt(i,Rr*ring/4);p.push(x.toFixed(1)+','+y.toFixed(1));}s+=`<polygon points="${p.join(' ')}" fill="none" stroke="var(--line)"/>`;}
